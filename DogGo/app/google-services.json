@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1084172132050",
+    "project_id": "dam-m13-grupo22",
+    "storage_bucket": "dam-m13-grupo22.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084172132050:android:0979aa539002aff3b8d70b",
+        "android_client_info": {
+          "package_name": "com.example.doggo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3ablMyIG33D4XkmNeohvT2lla-qlsepE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
