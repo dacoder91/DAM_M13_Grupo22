@@ -5,10 +5,13 @@
     <meta-data
         android:name="com.google.android.geo.API_KEY"
         android:value="AIzaSyCvm_psUmNFxWI1Qrepe6q1F9IawFMQ0Ak" />
-    <!-- API Key de Google Maps (mejor práctica: usa BuildConfig) -->
-    <meta-data
+
+
+    <!--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    <!- API Key de Google Maps (mejor práctica: usa BuildConfig)
+    <!-<meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="${MAPS_API_KEY}" /> <!-- Configurado en build.gradle -->
+        android:value="@string/maps_api_key" />  -->
 
     <application
         android:allowBackup="true"
