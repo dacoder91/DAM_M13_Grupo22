@@ -28,3 +28,8 @@ Entrenamiento y educación canina
 También indicar que vamos a realizar el Backend en alguna plataforma gratuita como Firebase o Supabase. 
 
 Cris, Issac y David
+
+
+=======
+2025
+

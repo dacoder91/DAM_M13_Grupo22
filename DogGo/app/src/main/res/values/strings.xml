@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">DogGo</string>
+    <string name="title_activity_login_screen">LoginScreen</string>
+    <string name="title_activity_app_navigation">AppNavigation</string>
+    <string name="title_activity_main_screen">MainScreen</string>
+    <string name="title_activity_eventos_screen">EventosScreen</string>
+    <string name="title_activity_mapa_screen">MapaScreen</string>
+    <string name="title_activity_mascotas_perdidas_screen">MascotasPerdidasScreen</string>
+    <string name="title_activity_profile_screen">ProfileScreen</string>
+</resources>
