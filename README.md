@@ -1,11 +1,10 @@
 <p align="center">
-  <img src="https://imgur.com/a/PDp3gwp" alt="Logo del proyecto" width="200">
+  <img src="https://i.imgur.com/X18EwAv.png" alt="Logo del proyecto" width="200">
 </p> 
 
 <p align="center">
-  <img src="https://imgur.com/a/BAnoEKY" alt="Logo del proyecto" width="200">
+  <img src="https://i.imgur.com/mVv6xL9.png" alt="Logo del proyecto" width="200">
 </p> 
-
 
 Repositorio del proyecto del Grupo 22 de DAM/LinkiaFP. "DogGo"
 
