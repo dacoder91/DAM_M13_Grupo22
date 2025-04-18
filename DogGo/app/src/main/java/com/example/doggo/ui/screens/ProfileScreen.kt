@@ -46,6 +46,7 @@ fun ProfileScreen(navController: NavController) {
     var showEditPetDialog by remember { mutableStateOf(false) }
     var selectedPet by remember { mutableStateOf<Mascota?>(null) }
 
+
     LaunchedEffect(Unit) {
         val currentUser = auth.currentUser
         if (currentUser == null) {
