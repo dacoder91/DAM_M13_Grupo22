@@ -78,7 +78,7 @@ fun BottomNavGraph(
     ) {
         composable("eventos") { EventosScreen() }
         composable("mapa") { MapaScreen() }
-        composable("perdidos") { MascotasPerdidasScreen() }
+        composable("perdidos") { MascotasPerdidasScreen(parentNavController) }
         composable("perfil") { ProfileScreen(parentNavController) }  // Usa el navController principal aquí
     }
 }
