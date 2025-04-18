@@ -53,9 +53,12 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
+    implementation(libs.google.firebase.storage.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.firebase.storage.ktx)
+    implementation(libs.coil.compose)
 
 
     // TODO: Agrega las dependencias para los productos de Firebase que deseas usar
