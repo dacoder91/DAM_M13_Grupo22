@@ -13,12 +13,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(navController: NavHostController) {  // Añade este parámetro
+fun MainScreen(navController: NavHostController) {
     val bottomNavController = rememberNavController()
 
     Scaffold(
@@ -26,19 +27,20 @@ fun MainScreen(navController: NavHostController) {  // Añade este parámetro
     ) { innerPadding ->
         BottomNavGraph(
             navController = bottomNavController,
-            parentNavController = navController,  // Pasa el navController principal
-            modifier = Modifier.padding(innerPadding))
+            parentNavController = navController,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 }
-
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
+        NavigationItem("Home", Icons.Filled.Home, "home"), // Nuevo ítem
         NavigationItem("Eventos", Icons.Filled.DateRange, "eventos"),
         NavigationItem("Mapa", Icons.Filled.Place, "mapa"),
         NavigationItem("Perdidos", Icons.Filled.Search, "perdidos"),
-        NavigationItem("Perfil", Icons.Filled.AccountBox , "perfil")
+        NavigationItem("Perfil", Icons.Filled.AccountBox, "perfil")
     )
     NavigationBar {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -68,18 +70,19 @@ fun BottomNavigationBar(navController: NavHostController) {
 @Composable
 fun BottomNavGraph(
     navController: NavHostController,
-    parentNavController: NavHostController,  // Añade este parámetro
+    parentNavController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = "perfil",
+        startDestination = "home", // Cambiar la pantalla inicial a "home"
         modifier = modifier
     ) {
+        composable("home") { HomeScreen(parentNavController) } // Nueva pantalla
         composable("eventos") { EventosScreen() }
         composable("mapa") { MapaScreen() }
-        composable("perdidos") { MascotasPerdidasScreen() }
-        composable("perfil") { ProfileScreen(parentNavController) }  // Usa el navController principal aquí
+        composable("perdidos") { MascotasPerdidasScreen(parentNavController) }
+        composable("perfil") { ProfileScreen(parentNavController) }
     }
 }
 
