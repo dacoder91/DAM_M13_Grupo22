@@ -20,7 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
@@ -131,8 +133,16 @@ fun ProfileScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFE3D471))
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.imagenfondologin),
+            contentDescription = "Fondo difuminado",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.5f
+        )
+
+        // Botón Salir
         Button(
             onClick = {
                 auth.signOut()
@@ -145,11 +155,12 @@ fun ProfileScreen(navController: NavController) {
                 .padding(16.dp)
                 .size(width = 80.dp, height = 32.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
-            )
+                containerColor = Color(0xFFE91E63),
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(20.dp) // Botón redondeado
         ) {
-            Text("Exit")
+            Text("Salir")
         }
 
         Column(
@@ -158,42 +169,63 @@ fun ProfileScreen(navController: NavController) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Mi Perfil",
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Image(
+                painter = painterResource(id = R.drawable.perroypersona),
+                contentDescription = "Avatar",
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = usuario?.nombre ?: "Sin nombre",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
                 ) {
-                    Column {
-                        Text(text = "Email: ${usuario?.email ?: "Sin correo"}")
-                        Text(text = "Teléfono: ${usuario?.telefono ?: "Sin teléfono"}")
-                    }
+                    Text(
+                        text = "Mi Perfil",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
 
-                    IconButton(onClick = {
-                        showEditDialog = true
-                    }) {
-                        Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar perfil")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = "Email: ${usuario?.email ?: "Sin correo"}")
+                            Text(text = "Teléfono: ${usuario?.telefono ?: "Sin teléfono"}")
+                        }
+
+                        IconButton(onClick = {
+                            showEditDialog = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar perfil",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -202,7 +234,7 @@ fun ProfileScreen(navController: NavController) {
 
             Text(
                 text = "Mis Mascotas",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 

@@ -61,8 +61,7 @@ dependencies {
     implementation(libs.coil.compose)
 
 
-    // TODO: Agrega las dependencias para los productos de Firebase que deseas usar
-    // Cuando uses el BoM, no especifiques versiones en las dependencias de Firebase
+
     implementation(libs.firebase.analytics)
 
 
@@ -83,7 +82,7 @@ dependencies {
 
     // Maps
     implementation (libs.maps.compose)
-    implementation ("com.google.android.gms:play-services-maps:19.1.0")
+
 
     // Coil para imágenes
     implementation (libs.coil.compose)

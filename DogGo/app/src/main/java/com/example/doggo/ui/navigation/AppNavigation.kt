@@ -14,7 +14,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
         composable("main") { MainScreen(navController) }
         composable("eventos") { EventosScreen() }
         composable("mapa") { MapaScreen() }
-        composable("perdidos") { MascotasPerdidasScreen() }
+        composable("perdidos") { MascotasPerdidasScreen(navController) }
         composable("perfil") { ProfileScreen(navController) }
     }
 }
