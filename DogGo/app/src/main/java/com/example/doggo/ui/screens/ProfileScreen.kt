@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,13 +25,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.R
 import com.example.doggo.models.Mascota
 import com.example.doggo.models.Usuario
+import com.example.doggo.ui.screens.ui.theme.YellowPeach
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -153,13 +160,15 @@ fun ProfileScreen(navController: NavController) {
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .size(width = 80.dp, height = 32.dp),
+                .size(width = 100.dp, height = 36.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFE91E63),
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(20.dp) // Botón redondeado
         ) {
+            Icon(Icons.Default.Logout, contentDescription = "Salir")
+            Spacer(modifier = Modifier.width(4.dp))
             Text("Salir")
         }
 
@@ -184,7 +193,10 @@ fun ProfileScreen(navController: NavController) {
 
             Text(
                 text = usuario?.nombre ?: "Sin nombre",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = TextStyle(
+                    fontFamily = YellowPeach,
+                    fontSize = 26.sp
+                )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -234,71 +246,104 @@ fun ProfileScreen(navController: NavController) {
 
             Text(
                 text = "Mis Mascotas",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
+                style = TextStyle(
+                    fontFamily = YellowPeach,
+                    fontSize = 22.sp
+                )
             )
 
-            LazyColumn {
-                items(mascotas) { mascota ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Ponemos las cartas de los perfiles de mascotas en una caja con scroll
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // Ocupa el espacio restante de la pantalla
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(mascotas) { mascota ->
+                        Card(
                             modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (mascota.fotoUrl.isNotEmpty()) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(mascota.fotoUrl),
-                                        contentDescription = "Foto de la mascota",
+                            Row(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
                                         modifier = Modifier
                                             .size(64.dp)
-                                            .clip(CircleShape)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                // Información de la mascota
-                                Column {
-                                    Text(text = "Nombre: ${mascota.nombre}")
-                                    Text(text = "Raza: ${mascota.raza}")
-                                    Text(text = "Edad: ${mascota.edad} años")
-                                }
-                            }
-
-                            Row {
-                                IconButton(onClick = {
-                                    selectedPet = mascota
-                                    showEditPetDialog = true
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Editar mascota",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-
-                                IconButton(onClick = {
-                                    val updatedMascotas = mascotas.filter { it.id != mascota.id }
-                                    db.collection("usuarios").document(usuario!!.id)
-                                        .update("mascotas", updatedMascotas.map { it.id })
-                                        .addOnSuccessListener {
-                                            mascotas = updatedMascotas
+                                            .background(Color.White)
+                                            .border(
+                                                width = 2.dp,
+                                                color = Color.White,
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (mascota.fotoUrl.isNotEmpty()) {
+                                            Image(
+                                                painter = rememberAsyncImagePainter(mascota.fotoUrl),
+                                                contentDescription = "Foto de la mascota",
+                                                modifier = Modifier
+                                                    .size(64.dp)
+                                                    .clip(CircleShape)
+                                            )
+                                        } else {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.perro),
+                                                contentDescription = "Imagen por defecto perfil mascota",
+                                                tint = Color.Unspecified,
+                                                modifier = Modifier.size(56.dp)
+                                            )
                                         }
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Eliminar mascota",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+                                    // Información de la mascota
+                                    Column {
+                                        Text(text = "Nombre: ${mascota.nombre}")
+                                        Text(text = "Raza: ${mascota.raza}")
+                                        Text(text = "Edad: ${mascota.edad} años")
+                                    }
+                                }
+
+                                Row {
+                                    IconButton(onClick = {
+                                        selectedPet = mascota
+                                        showEditPetDialog = true
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Editar mascota",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    IconButton(onClick = {
+                                        val updatedMascotas =
+                                            mascotas.filter { it.id != mascota.id }
+                                        db.collection("usuarios").document(usuario!!.id)
+                                            .update("mascotas", updatedMascotas.map { it.id })
+                                            .addOnSuccessListener {
+                                                mascotas = updatedMascotas
+                                            }
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Eliminar mascota",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -310,8 +355,17 @@ fun ProfileScreen(navController: NavController) {
 
             Button(
                 onClick = { showAddPetDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE91E63),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(20.dp)
             ) {
+                Icon(Icons.Default.Add, contentDescription = "Añadir")
+                Spacer(modifier = Modifier.width(4.dp))
                 Text("Añadir Mascota")
             }
         }
