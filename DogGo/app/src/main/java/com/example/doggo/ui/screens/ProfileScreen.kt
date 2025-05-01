@@ -1,9 +1,6 @@
 package com.example.doggo.ui.screens
 
-import android.net.Uri
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Logout
@@ -25,8 +23,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,13 +35,14 @@ import com.example.doggo.ui.screens.ui.theme.YellowPeach
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
-import java.util.UUID
 
 // Pantalla principal del perfil del usuario. Muestra la información del usuario,
 // la lista de mascotas asociadas y permite editar el perfil, añadir o editar mascotas.
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(
+    navController: NavController,
+    parentNavController: NavController
+) {
     val auth = Firebase.auth
     val db = FirebaseFirestore.getInstance()
     var usuario by remember { mutableStateOf<Usuario?>(null) }
@@ -154,21 +151,21 @@ fun ProfileScreen(navController: NavController) {
         Button(
             onClick = {
                 auth.signOut()
-                navController.navigate("login") {
+                parentNavController.navigate("login") {
                     popUpTo(0)
                 }
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .size(width = 100.dp, height = 36.dp),
+                .size(width = 110.dp, height = 35.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFE91E63),
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(20.dp) // Botón redondeado
         ) {
-            Icon(Icons.Default.Logout, contentDescription = "Salir")
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Salir")
             Spacer(modifier = Modifier.width(4.dp))
             Text("Salir")
         }
@@ -184,7 +181,7 @@ fun ProfileScreen(navController: NavController) {
 
             // Icono de pantalla
             Image(
-                painter = painterResource(id = R.drawable.perroypersona),
+                painter = painterResource(id = R.drawable.iconoperfil),
                 contentDescription = "Avatar",
                 modifier = Modifier
                     .size(96.dp)
@@ -303,7 +300,7 @@ fun ProfileScreen(navController: NavController) {
                                             )
                                         } else {
                                             Icon(
-                                                painter = painterResource(id = R.drawable.perro),
+                                                painter = painterResource(id = R.drawable.iconoperro),
                                                 contentDescription = "Imagen por defecto perfil mascota",
                                                 tint = Color.Unspecified,
                                                 modifier = Modifier.size(56.dp)

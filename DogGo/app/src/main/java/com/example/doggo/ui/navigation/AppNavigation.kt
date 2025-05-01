@@ -4,17 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.doggo.ui.screens.LoginScreen
-import com.example.doggo.ui.screens.*
+import com.example.doggo.ui.screens.MainScreen
 
 @Composable
-fun AppNavigation(navController: NavHostController, startDestination: String) {
-    NavHost(navController = navController, startDestination = startDestination) {
+fun AppNavigation(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
-        composable("main") { MainScreen(navController) }
-        composable("eventos") { EventosScreen() }
-        composable("mapa") { MapaScreen() }
-        composable("perdidos") { MascotasPerdidasScreen(navController) }
-        composable("perfil") { ProfileScreen(navController) }
+        composable("main") {
+            val nestedNavController = rememberNavController()
+            MainScreen(
+                navController = nestedNavController,
+                parentNavController = navController)
+        }
     }
 }

@@ -1,7 +1,6 @@
 package com.example.doggo.ui.screens
 
 import com.example.doggo.R
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
@@ -16,16 +15,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -37,9 +33,7 @@ fun LoginScreen(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         // Imagen de fondo
         Image(
             painter = painterResource(id = R.drawable.imagenfondologin),
@@ -98,33 +92,27 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
-                    isLoading = true
                     scope.launch {
+                        isLoading = true
                         try {
-                            auth.signInWithEmailAndPassword(email, password)
-                                .addOnCompleteListener { task ->
-                                    isLoading = false
-                                    if (task.isSuccessful) {
-                                        navController.navigate("main") {
-                                            popUpTo("login") { inclusive = true }
-                                        }
-                                    } else {
-                                        errorMessage = when (task.exception) {
-                                            is FirebaseAuthInvalidUserException ->
-                                                "Usuario no registrado"
-                                            is FirebaseAuthInvalidCredentialsException ->
-                                                "Credenciales incorrectas"
-                                            else -> "Error: ${task.exception?.message}"
-                                        }
-                                    }
-                                }
+                            auth.signInWithEmailAndPassword(email, password).await()
+                            navController.navigate("main") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        } catch (e: FirebaseAuthInvalidUserException) {
+                            errorMessage = "Usuario no registrado"
+                        } catch (e: FirebaseAuthInvalidCredentialsException) {
+                            errorMessage = "Credenciales incorrectas"
                         } catch (e: Exception) {
+                            errorMessage = "Error: ${e.message}"
+                        } finally {
                             isLoading = false
-                            errorMessage = "Error al iniciar sesión"
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth() .height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = MaterialTheme.shapes.large,
                 enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
             ) {
@@ -142,50 +130,37 @@ fun LoginScreen(navController: NavController) {
                         return@TextButton
                     }
 
-                    isLoading = true
-                    scope.launch {
-                        try {
-                            auth.createUserWithEmailAndPassword(email, password)
-                                .addOnCompleteListener { task ->
-                                    isLoading = false
-                                    if (task.isSuccessful) {
-                                        val user = auth.currentUser
-                                        user?.let {
-                                            val userData = hashMapOf(
-                                                "nombre" to "Nuevo usuario",
-                                                "email" to email,
-                                                "mascotas" to listOf<String>(),
-                                                "fechaRegistro" to FieldValue.serverTimestamp()
-                                            )
 
-                                            db.collection("usuarios").document(user.uid)
-                                                .set(userData)
-                                                .addOnSuccessListener {
-                                                    navController.navigate("main") {
-                                                        popUpTo("login") { inclusive = true }
-                                                    }
-                                                }
-                                                .addOnFailureListener { e ->
-                                                    errorMessage = "Error al guardar datos: ${e.message}"
-                                                }
-                                        } ?: run {
-                                            errorMessage = "Error al obtener usuario"
-                                        }
-                                    } else {
-                                        errorMessage = when (task.exception) {
-                                            is FirebaseAuthWeakPasswordException ->
-                                                "La contraseña debe tener al menos 6 caracteres"
-                                            is FirebaseAuthInvalidCredentialsException ->
-                                                "Email inválido"
-                                            is FirebaseAuthUserCollisionException ->
-                                                "El email ya está registrado"
-                                            else -> "Error: ${task.exception?.message}"
-                                        }
-                                    }
+                    scope.launch {
+                        isLoading = true
+                        try {
+                            auth.createUserWithEmailAndPassword(email, password).await()
+                            val user = auth.currentUser
+                            user?.let {
+                                val userData = hashMapOf(
+                                    "nombre" to "Nuevo usuario",
+                                    "email" to email,
+                                    "mascotas" to listOf<String>(),
+                                    "fechaRegistro" to FieldValue.serverTimestamp()
+                                )
+
+                                db.collection("usuarios").document(user.uid).set(userData).await()
+                                navController.navigate("main") {
+                                    popUpTo("login") { inclusive = true }
                                 }
+                            } ?: run {
+                                errorMessage = "Error al obtener usuario"
+                            }
+                        } catch (e: FirebaseAuthWeakPasswordException) {
+                            errorMessage = "La contraseña debe tener al menos 6 caracteres"
+                        } catch (e: FirebaseAuthInvalidCredentialsException) {
+                            errorMessage = "Email inválido"
+                        } catch (e: FirebaseAuthUserCollisionException) {
+                            errorMessage = "El email ya está registrado"
                         } catch (e: Exception) {
+                            errorMessage = "Error: ${e.message}"
+                        } finally {
                             isLoading = false
-                            errorMessage = "Error al crear cuenta"
                         }
                     }
                 },
@@ -209,6 +184,4 @@ fun LoginScreen(navController: NavController) {
             }
         }
     }
-
-
 }
