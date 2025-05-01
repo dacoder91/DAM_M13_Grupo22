@@ -12,7 +12,7 @@ val YellowPeach = FontFamily(Font(R.font.yellowpeach))
 // Set of Material typography styles to start with
 val AppTypography = Typography(
     titleLarge = TextStyle(
-        fontFamily = YellowPeach, // Aquí aplicamos la fuente Cooper Black
+        fontFamily = YellowPeach, // Aquí aplicamos la fuente 
         fontSize = 26.sp
     ),
     titleMedium = TextStyle(

@@ -141,8 +141,9 @@ fun ProfileScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
     ) {
+        // Imagen de fondo de pantalla
         Image(
-            painter = painterResource(id = R.drawable.imagenfondologin),
+            painter = painterResource(id = R.drawable.imagenperfil3),
             contentDescription = "Fondo difuminado",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
@@ -180,6 +181,8 @@ fun ProfileScreen(navController: NavController) {
         ) {
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Icono de pantalla
             Image(
                 painter = painterResource(id = R.drawable.perroypersona),
                 contentDescription = "Avatar",
@@ -191,6 +194,7 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Nombre del usuario
             Text(
                 text = usuario?.nombre ?: "Sin nombre",
                 style = TextStyle(
@@ -215,7 +219,7 @@ fun ProfileScreen(navController: NavController) {
                 ) {
                     Text(
                         text = "Mi Perfil",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = TextStyle(fontFamily = YellowPeach, fontSize = 18.sp),
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
