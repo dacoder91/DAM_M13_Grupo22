@@ -46,6 +46,7 @@ fun EventosScreen(
     var eventos by remember { mutableStateOf<List<Evento>>(emptyList()) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf(false) }
     var selectedEvento by remember { mutableStateOf<Evento?>(null) }
 
     LaunchedEffect(Unit) {
@@ -131,36 +132,16 @@ fun EventosScreen(
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Título: ${evento.titulo}", fontSize = 18.sp)
-                            Text("Fecha: ${evento.fecha.toDate()}")
-                            Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
-                            Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
-
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (evento.creadorId == currentUser?.uid) {
-                                    IconButton(onClick = {
-                                        selectedEvento = evento
-                                        showEditDialog = true
-                                    }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Editar")
-                                    }
-
-                                    IconButton(onClick = {
-                                        db.collection("eventos").document(evento.id).delete()
-                                            .addOnSuccessListener {
-                                                Toast.makeText(
-                                                    navController.context,
-                                                    "Evento eliminado",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                    }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
-                                    }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Título: ${evento.titulo}", fontSize = 18.sp)
+                                    Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
+                                    Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                                    Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
                                 }
 
                                 Column(horizontalAlignment = Alignment.End) {
@@ -189,7 +170,7 @@ fun EventosScreen(
                                             containerColor = Color(0xFF4CAF50), // Verde
                                             contentColor = Color.White
                                         ),
-                                        modifier = Modifier.padding(start = 8.dp)
+                                        modifier = Modifier.padding(bottom = 8.dp)
                                     ) {
                                         Text(
                                             text = "Unirse",
@@ -203,13 +184,13 @@ fun EventosScreen(
                                     Button(
                                         onClick = {
                                             selectedEvento = evento
-                                            showEditDialog = true
+                                            showEditDialog = false // Asegurarse de que no se muestre el diálogo de edición
+                                            showInfoDialog = true // Mostrar el nuevo diálogo informativo
                                         },
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color(0xFF2196F3), // Azul
                                             contentColor = Color.White
-                                        ),
-                                        modifier = Modifier.padding(top = 8.dp)
+                                        )
                                     ) {
                                         Text(
                                             text = "+Info",
@@ -218,6 +199,34 @@ fun EventosScreen(
                                             fontWeight = FontWeight.Bold,
                                             color = Color.Black
                                         )
+                                    }
+                                }
+                            }
+
+                            if (evento.creadorId == currentUser?.uid) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    IconButton(onClick = {
+                                        selectedEvento = evento
+                                        showEditDialog = true
+                                    }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                    }
+
+                                    IconButton(onClick = {
+                                        db.collection("eventos").document(evento.id).delete()
+                                            .addOnSuccessListener {
+                                                Toast.makeText(
+                                                    navController.context,
+                                                    "Evento eliminado",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                    }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
                                     }
                                 }
                             }
@@ -270,6 +279,13 @@ fun EventosScreen(
                         showEditDialog = false
                     }
             }
+        )
+    }
+
+    if (showInfoDialog && selectedEvento != null) {
+        InfoEventDialog(
+            evento = selectedEvento!!,
+            onDismiss = { showInfoDialog = false }
         )
     }
 }
@@ -377,6 +393,7 @@ fun EditEventDialog(
     var fecha by remember { mutableStateOf<Long?>(evento.fecha.toDate().time) }
     var showDatePicker by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf(evento.tipo) }
+    var showDescriptionDialog by remember { mutableStateOf(false) }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fecha)
@@ -448,6 +465,76 @@ fun EditEventDialog(
                     onValueChange = { tipo = it },
                     label = { Text("Tipo de Evento") }
                 )
+            }
+        }
+    )
+
+    if (showDescriptionDialog) {
+        LongDescriptionDialog(
+            initialText = descripcion,
+            onDismiss = { showDescriptionDialog = false },
+            onSave = {
+                descripcion = it
+                showDescriptionDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun LongDescriptionDialog(
+    initialText: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(initialText) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onSave(text) }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Editar Descripción") },
+        text = {
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.height(200.dp),
+                label = { Text("Descripción") },
+                maxLines = 10
+            )
+        }
+    )
+}
+
+@Composable
+fun InfoEventDialog(
+    evento: Evento,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        },
+        title = { Text("Información del Evento") },
+        text = {
+            Column {
+                Text("Título: ${evento.titulo}", fontWeight = FontWeight.Bold)
+                Text("Descripción: ${evento.descripcion}")
+                Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
+                Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
+                Text("Tipo: ${evento.tipo}")
             }
         }
     )

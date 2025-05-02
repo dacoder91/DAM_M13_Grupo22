@@ -273,13 +273,14 @@ fun AddLostPetDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.fillMaxWidth(), // Ocupa todo el ancho de la pantalla
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 val nuevaMascota = MascotaPerdida(
                     usuarioId = Firebase.auth.currentUser?.uid ?: "",
                     nombreMascota = nombreMascota,
-                    fechaPerdida = Timestamp(fechaPerdida ?: System.currentTimeMillis() / 1000, 0),
+                    fechaPerdida = fechaPerdida?.let { Timestamp(it / 1000, 0) } ?: Timestamp.now(),
                     ubicacion = GeoPoint(0.0, 0.0),
                     fotoUrl = fotoUrl,
                     encontrado = encontrado,
@@ -322,13 +323,6 @@ fun AddLostPetDialog(
                     onValueChange = { contacto = it },
                     label = { Text("Contacto (Teléfono o Email)") }
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = encontrado,
-                        onCheckedChange = { encontrado = it }
-                    )
-                    Text("¿Encontrado?")
-                }
             }
         }
     )
@@ -342,11 +336,10 @@ fun EditLostPetDialog(
     onSave: (MascotaPerdida) -> Unit
 ) {
     var nombreMascota by remember { mutableStateOf(mascota.nombreMascota) }
-    var fechaPerdida by remember { mutableStateOf<Long?>(mascota.fechaPerdida.seconds * 1000) }
+    var fechaPerdida by remember { mutableStateOf(mascota.fechaPerdida.toDate().time) }
     var showDatePicker by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf("${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}") }
     var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
-    var encontrado by remember { mutableStateOf(mascota.encontrado) }
     var contacto by remember { mutableStateOf(mascota.contacto) }
 
     if (showDatePicker) {
@@ -358,7 +351,7 @@ fun EditLostPetDialog(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        fechaPerdida = datePickerState.selectedDateMillis
+                        fechaPerdida = datePickerState.selectedDateMillis ?: fechaPerdida
                         showDatePicker = false
                     },
                     enabled = confirmEnabled.value
@@ -377,15 +370,18 @@ fun EditLostPetDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.fillMaxWidth(), // Ocupa todo el ancho de la pantalla
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 val updatedMascota = mascota.copy(
                     nombreMascota = nombreMascota,
-                    fechaPerdida = Timestamp(fechaPerdida ?: System.currentTimeMillis() / 1000, 0),
-                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
+                    fechaPerdida = Timestamp(fechaPerdida / 1000, 0),
+                    ubicacion = GeoPoint(
+                        ubicacion.split(",").getOrNull(0)?.toDoubleOrNull() ?: 0.0,
+                        ubicacion.split(",").getOrNull(1)?.toDoubleOrNull() ?: 0.0
+                    ),
                     fotoUrl = fotoUrl,
-                    encontrado = encontrado,
                     contacto = contacto
                 )
                 onSave(updatedMascota)
@@ -409,11 +405,11 @@ fun EditLostPetDialog(
                 Button(onClick = { showDatePicker = true }) {
                     Text("Seleccionar Fecha de Pérdida")
                 }
-                Text("Fecha seleccionada: ${fechaPerdida?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "No seleccionada"}")
+                Text("Fecha seleccionada: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(fechaPerdida)}")
                 TextField(
                     value = ubicacion,
                     onValueChange = { ubicacion = it },
-                    label = { Text("Ubicación") }
+                    label = { Text("Ubicación (Latitud, Longitud)") }
                 )
                 TextField(
                     value = fotoUrl,
@@ -425,13 +421,6 @@ fun EditLostPetDialog(
                     onValueChange = { contacto = it },
                     label = { Text("Contacto (Teléfono o Email)") }
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = encontrado,
-                        onCheckedChange = { encontrado = it }
-                    )
-                    Text("¿Encontrado?")
-                }
             }
         }
     )

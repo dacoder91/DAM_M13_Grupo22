@@ -7,7 +7,7 @@ data class MascotaPerdida(
     val nombreMascota: String = "",
     val fechaPerdida: Timestamp = Timestamp.now(),
     val ubicacion: GeoPoint = GeoPoint(0.0, 0.0),
-    val fotoUrl: String = "",
+    val fotoUrl: String = "https://static.thenounproject.com/png/765839-200.png",
     val encontrado: Boolean = false,
     val contacto : String = ""
 )
