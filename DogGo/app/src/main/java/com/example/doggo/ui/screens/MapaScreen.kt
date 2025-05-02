@@ -19,8 +19,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.doggo.R
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun MapaScreen(
@@ -77,12 +84,19 @@ fun MapaScreen(
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Aquí se mostrará el mapa")
-                }
+                AndroidView(
+                    factory = { context ->
+                        MapView(context).apply {
+                            onCreate(null)
+                            getMapAsync { googleMap ->
+                                val location = LatLng(-34.0, 151.0) // Ejemplo: Sídney
+                                googleMap.addMarker(MarkerOptions().position(location).title("Marker in Sydney"))
+                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 10f))
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

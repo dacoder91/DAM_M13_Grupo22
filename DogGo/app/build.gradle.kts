@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,6 +22,11 @@ android {
 
         // Crea una variable BuildConfig con la API Key
         buildConfigField("String", "MAPS_API_KEY", "\"${properties["MAPS_API_KEY"]}\"")
+
+        // Cargar la clave de la API desde local.properties
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        manifestPlaceholders["MAPS_API_KEY"] = properties.getProperty("MAPS_API_KEY")
     }
 
     buildTypes {
@@ -82,6 +89,7 @@ dependencies {
 
     // Maps
     implementation (libs.maps.compose)
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
 
 
     // Coil para imágenes
