@@ -231,17 +231,46 @@ fun MascotasPerdidasScreen(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLostPetDialog(
     onDismiss: () -> Unit,
     onSave: (MascotaPerdida) -> Unit
 ) {
     var nombreMascota by remember { mutableStateOf("") }
-    var fechaPerdida by remember { mutableStateOf("") }
+    var fechaPerdida by remember { mutableStateOf<Long?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf("") }
     var fotoUrl by remember { mutableStateOf("") }
     var encontrado by remember { mutableStateOf(false) }
     var contacto by remember { mutableStateOf("") }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        val confirmEnabled = remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        fechaPerdida = datePickerState.selectedDateMillis
+                        showDatePicker = false
+                    },
+                    enabled = confirmEnabled.value
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -250,8 +279,8 @@ fun AddLostPetDialog(
                 val nuevaMascota = MascotaPerdida(
                     usuarioId = Firebase.auth.currentUser?.uid ?: "",
                     nombreMascota = nombreMascota,
-                    fechaPerdida = Timestamp.now(), // Temporalmente la fecha actual
-                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
+                    fechaPerdida = Timestamp(fechaPerdida ?: System.currentTimeMillis() / 1000, 0),
+                    ubicacion = GeoPoint(0.0, 0.0),
                     fotoUrl = fotoUrl,
                     encontrado = encontrado,
                     contacto = contacto
@@ -274,11 +303,10 @@ fun AddLostPetDialog(
                     onValueChange = { nombreMascota = it },
                     label = { Text("Nombre de la Mascota") }
                 )
-                TextField(
-                    value = fechaPerdida,
-                    onValueChange = { fechaPerdida = it },
-                    label = { Text("Fecha de Pérdida (dd/MM/yyyy)") }
-                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha de Pérdida")
+                }
+                Text("Fecha seleccionada: ${fechaPerdida?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "No seleccionada"}")
                 TextField(
                     value = ubicacion,
                     onValueChange = { ubicacion = it },
@@ -306,6 +334,7 @@ fun AddLostPetDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLostPetDialog(
     mascota: MascotaPerdida,
@@ -313,11 +342,39 @@ fun EditLostPetDialog(
     onSave: (MascotaPerdida) -> Unit
 ) {
     var nombreMascota by remember { mutableStateOf(mascota.nombreMascota) }
-    var fechaPerdida by remember { mutableStateOf(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(mascota.fechaPerdida.toDate())) }
+    var fechaPerdida by remember { mutableStateOf<Long?>(mascota.fechaPerdida.seconds * 1000) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf("${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}") }
     var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
     var encontrado by remember { mutableStateOf(mascota.encontrado) }
     var contacto by remember { mutableStateOf(mascota.contacto) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaPerdida)
+        val confirmEnabled = remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        fechaPerdida = datePickerState.selectedDateMillis
+                        showDatePicker = false
+                    },
+                    enabled = confirmEnabled.value
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -325,7 +382,7 @@ fun EditLostPetDialog(
             TextButton(onClick = {
                 val updatedMascota = mascota.copy(
                     nombreMascota = nombreMascota,
-                    fechaPerdida = Timestamp.now(), // Temporalmente la fecha actual
+                    fechaPerdida = Timestamp(fechaPerdida ?: System.currentTimeMillis() / 1000, 0),
                     ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
                     fotoUrl = fotoUrl,
                     encontrado = encontrado,
@@ -349,11 +406,10 @@ fun EditLostPetDialog(
                     onValueChange = { nombreMascota = it },
                     label = { Text("Nombre de la Mascota") }
                 )
-                TextField(
-                    value = fechaPerdida,
-                    onValueChange = { fechaPerdida = it },
-                    label = { Text("Fecha de Pérdida (dd/MM/yyyy)") }
-                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha de Pérdida")
+                }
+                Text("Fecha seleccionada: ${fechaPerdida?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "No seleccionada"}")
                 TextField(
                     value = ubicacion,
                     onValueChange = { ubicacion = it },

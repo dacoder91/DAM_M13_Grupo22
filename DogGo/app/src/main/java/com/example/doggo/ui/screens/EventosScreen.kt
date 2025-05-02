@@ -32,6 +32,9 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.Timestamp
 import com.example.doggo.R
 import com.example.doggo.ui.screens.ui.theme.YellowPeach
+import java.text.SimpleDateFormat
+import java.util.*
+
 
 @Composable
 fun EventosScreen(
@@ -271,6 +274,7 @@ fun EventosScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEventDialog(
     onDismiss: () -> Unit,
@@ -279,8 +283,31 @@ fun AddEventDialog(
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
-    var fecha by remember { mutableStateOf("") }
+    var fecha by remember { mutableStateOf<Long?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf("") }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    fecha = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -289,9 +316,9 @@ fun AddEventDialog(
                 val nuevoEvento = Evento(
                     titulo = titulo,
                     descripcion = descripcion,
-                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
-                    fecha = Timestamp.now(), // Temporalmente la fecha actual
-                    maxParticipantes = 15, // Por defecto 15
+                    ubicacion = GeoPoint(0.0, 0.0),
+                    fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
+                    maxParticipantes = 15,
                     tipo = tipo,
                     creadorId = Firebase.auth.currentUser?.uid ?: ""
                 )
@@ -323,11 +350,10 @@ fun AddEventDialog(
                     onValueChange = { ubicacion = it },
                     label = { Text("Ubicación") }
                 )
-                TextField(
-                    value = fecha,
-                    onValueChange = { fecha = it },
-                    label = { Text("Fecha (dd/MM/yyyy)") }
-                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha")
+                }
+                Text("Fecha seleccionada: ${fecha?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "No seleccionada"}")
                 TextField(
                     value = tipo,
                     onValueChange = { tipo = it },
@@ -338,6 +364,7 @@ fun AddEventDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditEventDialog(
     evento: Evento,
@@ -347,8 +374,31 @@ fun EditEventDialog(
     var titulo by remember { mutableStateOf(evento.titulo) }
     var descripcion by remember { mutableStateOf(evento.descripcion) }
     var ubicacion by remember { mutableStateOf("${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}") }
-    var fecha by remember { mutableStateOf(evento.fecha.toDate().toString()) }
+    var fecha by remember { mutableStateOf<Long?>(evento.fecha.toDate().time) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf(evento.tipo) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fecha)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    fecha = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -357,8 +407,8 @@ fun EditEventDialog(
                 val updatedEvento = evento.copy(
                     titulo = titulo,
                     descripcion = descripcion,
-                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
-                    fecha = Timestamp.now(), // Temporalmente la fecha actual
+                    ubicacion = GeoPoint(0.0, 0.0),
+                    fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
                     tipo = tipo
                 )
                 onSave(updatedEvento)
@@ -389,11 +439,10 @@ fun EditEventDialog(
                     onValueChange = { ubicacion = it },
                     label = { Text("Ubicación") }
                 )
-                TextField(
-                    value = fecha,
-                    onValueChange = { fecha = it },
-                    label = { Text("Fecha (dd/MM/yyyy)") }
-                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha")
+                }
+                Text("Fecha seleccionada: ${fecha?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "No seleccionada"}")
                 TextField(
                     value = tipo,
                     onValueChange = { tipo = it },
