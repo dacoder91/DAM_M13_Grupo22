@@ -1,4 +1,3 @@
-
 package com.example.doggo.ui.screens
 
 import MascotaPerdida
@@ -30,9 +29,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.R
 import com.example.doggo.ui.screens.ui.theme.YellowPeach
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun MascotasPerdidasScreen(
@@ -132,8 +134,9 @@ fun MascotasPerdidasScreen(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Text("Nombre: ${mascota.nombreMascota}")
-                            Text("Fecha publicación: ${mascota.fechaPerdida.toDate()}")
+                            Text("Fecha publicación: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(mascota.fechaPerdida.toDate())}")
                             Text("Ubicación: ${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}")
+                            Text("Contacto: ${mascota.contacto}")
 
                             Spacer(modifier = Modifier.height(8.dp))
 
@@ -141,20 +144,36 @@ fun MascotasPerdidasScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                IconButton(onClick = {
-                                    selectedMascota = mascota
-                                    showEditDialog = true
-                                }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
-                                }
+                                if (mascota.usuarioId == Firebase.auth.currentUser?.uid) {
+                                    IconButton(onClick = {
+                                        selectedMascota = mascota
+                                        showEditDialog = true
+                                    }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                    }
 
-                                IconButton(onClick = {
-                                    db.collection("mascotasPerdidas").document(mascota.id).delete()
-                                        .addOnSuccessListener {
-                                            Toast.makeText(context, "Mascota eliminada", Toast.LENGTH_SHORT).show()
-                                        }
-                                }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                    IconButton(onClick = {
+                                        db.collection("mascotasPerdidas").document(mascota.id).delete()
+                                            .addOnSuccessListener {
+                                                Toast.makeText(context, "Mascota eliminada", Toast.LENGTH_SHORT).show()
+                                            }
+                                    }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = mascota.encontrado,
+                                            onCheckedChange = { isChecked ->
+                                                db.collection("mascotasPerdidas").document(mascota.id)
+                                                    .update("encontrado", isChecked)
+                                                    .addOnSuccessListener {
+                                                        Toast.makeText(context, "Estado actualizado", Toast.LENGTH_SHORT).show()
+                                                    }
+                                            }
+                                        )
+                                        Text("¿Encontrado?")
+                                    }
                                 }
                             }
                         }
@@ -179,47 +198,185 @@ fun MascotasPerdidasScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Añadir anuncio de mascota perdida")
             }
+
+            if (showAddDialog) {
+                AddLostPetDialog(
+                    onDismiss = { showAddDialog = false },
+                    onSave = { nuevaMascota ->
+                        db.collection("mascotasPerdidas").add(nuevaMascota)
+                            .addOnSuccessListener {
+                                Toast.makeText(navController.context, "Mascota añadida", Toast.LENGTH_SHORT).show()
+                                showAddDialog = false
+                            }
+                    }
+                )
+            }
+
+            if (showEditDialog && selectedMascota != null) {
+                EditLostPetDialog(
+                    mascota = selectedMascota!!,
+                    onDismiss = { showEditDialog = false },
+                    onSave = { updatedMascota ->
+                        db.collection("mascotasPerdidas").document(updatedMascota.id).set(updatedMascota)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Anuncio actualizado", Toast.LENGTH_SHORT).show()
+                                showEditDialog = false
+                            }
+                    }
+                )
+            }
         }
     }
 
-    @Composable
-    fun AddLostPetDialog(
-        onDismiss: () -> Unit,
-        onSave: (MascotaPerdida) -> Unit
-    ) {
-        if (showAddDialog) {
-            AddLostPetDialog(
-                onDismiss = { showAddDialog = false },
-                onSave = { mascota ->
-                    db.collection("mascotasPerdidas").add(mascota)
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Anuncio agregado", Toast.LENGTH_SHORT).show()
-                            showAddDialog = false
-                        }
-                }
-            )
-        }
-    }
 
-    @Composable
-    fun EditLostPetDialog(
-        mascota: MascotaPerdida,
-        onDismiss: () -> Unit,
-        onSave: (MascotaPerdida) -> Unit
-    ) {
-        if (showEditDialog && selectedMascota != null) {
-            EditLostPetDialog(
-                mascota = selectedMascota!!,
-                onDismiss = { showEditDialog = false },
-                onSave = { updated ->
-                    db.collection("mascotasPerdidas").document(updated.id).set(updated)
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Anuncio actualizado", Toast.LENGTH_SHORT)
-                                .show()
-                            showEditDialog = false
-                        }
+}
+
+@Composable
+fun AddLostPetDialog(
+    onDismiss: () -> Unit,
+    onSave: (MascotaPerdida) -> Unit
+) {
+    var nombreMascota by remember { mutableStateOf("") }
+    var fechaPerdida by remember { mutableStateOf("") }
+    var ubicacion by remember { mutableStateOf("") }
+    var fotoUrl by remember { mutableStateOf("") }
+    var encontrado by remember { mutableStateOf(false) }
+    var contacto by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val nuevaMascota = MascotaPerdida(
+                    usuarioId = Firebase.auth.currentUser?.uid ?: "",
+                    nombreMascota = nombreMascota,
+                    fechaPerdida = Timestamp.now(), // Temporalmente la fecha actual
+                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
+                    fotoUrl = fotoUrl,
+                    encontrado = encontrado,
+                    contacto = contacto
+                )
+                onSave(nuevaMascota)
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Añadir Mascota Perdida") },
+        text = {
+            Column {
+                TextField(
+                    value = nombreMascota,
+                    onValueChange = { nombreMascota = it },
+                    label = { Text("Nombre de la Mascota") }
+                )
+                TextField(
+                    value = fechaPerdida,
+                    onValueChange = { fechaPerdida = it },
+                    label = { Text("Fecha de Pérdida (dd/MM/yyyy)") }
+                )
+                TextField(
+                    value = ubicacion,
+                    onValueChange = { ubicacion = it },
+                    label = { Text("Ubicación") }
+                )
+                TextField(
+                    value = fotoUrl,
+                    onValueChange = { fotoUrl = it },
+                    label = { Text("URL de la Foto") }
+                )
+                TextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Contacto (Teléfono o Email)") }
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = encontrado,
+                        onCheckedChange = { encontrado = it }
+                    )
+                    Text("¿Encontrado?")
                 }
-            )
+            }
         }
-    }
+    )
+}
+
+@Composable
+fun EditLostPetDialog(
+    mascota: MascotaPerdida,
+    onDismiss: () -> Unit,
+    onSave: (MascotaPerdida) -> Unit
+) {
+    var nombreMascota by remember { mutableStateOf(mascota.nombreMascota) }
+    var fechaPerdida by remember { mutableStateOf(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(mascota.fechaPerdida.toDate())) }
+    var ubicacion by remember { mutableStateOf("${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}") }
+    var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
+    var encontrado by remember { mutableStateOf(mascota.encontrado) }
+    var contacto by remember { mutableStateOf(mascota.contacto) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val updatedMascota = mascota.copy(
+                    nombreMascota = nombreMascota,
+                    fechaPerdida = Timestamp.now(), // Temporalmente la fecha actual
+                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
+                    fotoUrl = fotoUrl,
+                    encontrado = encontrado,
+                    contacto = contacto
+                )
+                onSave(updatedMascota)
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Editar Mascota Perdida") },
+        text = {
+            Column {
+                TextField(
+                    value = nombreMascota,
+                    onValueChange = { nombreMascota = it },
+                    label = { Text("Nombre de la Mascota") }
+                )
+                TextField(
+                    value = fechaPerdida,
+                    onValueChange = { fechaPerdida = it },
+                    label = { Text("Fecha de Pérdida (dd/MM/yyyy)") }
+                )
+                TextField(
+                    value = ubicacion,
+                    onValueChange = { ubicacion = it },
+                    label = { Text("Ubicación") }
+                )
+                TextField(
+                    value = fotoUrl,
+                    onValueChange = { fotoUrl = it },
+                    label = { Text("URL de la Foto") }
+                )
+                TextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Contacto (Teléfono o Email)") }
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = encontrado,
+                        onCheckedChange = { encontrado = it }
+                    )
+                    Text("¿Encontrado?")
+                }
+            }
+        }
+    )
 }

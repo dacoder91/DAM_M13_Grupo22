@@ -1,14 +1,20 @@
 package com.example.doggo.ui.screens
 
+import Evento
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,17 +25,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.Timestamp
 import com.example.doggo.R
 import com.example.doggo.ui.screens.ui.theme.YellowPeach
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 
 @Composable
 fun EventosScreen(
     navController: NavController,
     parentNavController: NavController
 ) {
-    val auth = Firebase.auth
+    val db = FirebaseFirestore.getInstance()
+    val currentUser = Firebase.auth.currentUser
+    var eventos by remember { mutableStateOf<List<Evento>>(emptyList()) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var selectedEvento by remember { mutableStateOf<Evento?>(null) }
+
+    LaunchedEffect(Unit) {
+        db.collection("eventos").addSnapshotListener { snapshot, _ ->
+            if (snapshot != null) {
+                eventos = snapshot.documents.mapNotNull { document ->
+                    document.toObject(Evento::class.java)?.copy(id = document.id)
+                }
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Fondo difuminado
@@ -44,8 +68,10 @@ fun EventosScreen(
         // Botón de salir
         Button(
             onClick = {
-                auth.signOut()
-                parentNavController.navigate("login") { popUpTo(0) }
+                Firebase.auth.signOut()
+                parentNavController.navigate("login") {
+                    popUpTo(0)
+                }
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -91,11 +117,289 @@ fun EventosScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Aquí iría el contenido real de la pantalla de eventos
-            Text(
-                text = "Aquí aparecerán tus próximos eventos.",
-                style = MaterialTheme.typography.bodyLarge
-            )
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(eventos) { evento ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Título: ${evento.titulo}", fontSize = 18.sp)
+                            Text("Fecha: ${evento.fecha.toDate()}")
+                            Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                            Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (evento.creadorId == currentUser?.uid) {
+                                    IconButton(onClick = {
+                                        selectedEvento = evento
+                                        showEditDialog = true
+                                    }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                                    }
+
+                                    IconButton(onClick = {
+                                        db.collection("eventos").document(evento.id).delete()
+                                            .addOnSuccessListener {
+                                                Toast.makeText(
+                                                    navController.context,
+                                                    "Evento eliminado",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                    }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                    }
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Button(
+                                        onClick = {
+                                            if (evento.participantes.size >= 15) {
+                                                Toast.makeText(
+                                                    navController.context,
+                                                    "Evento completo",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                val updatedParticipantes = evento.participantes + currentUser!!.uid
+                                                db.collection("eventos").document(evento.id)
+                                                    .update("participantes", updatedParticipantes)
+                                                    .addOnSuccessListener {
+                                                        Toast.makeText(
+                                                            navController.context,
+                                                            "Te has unido al evento",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF4CAF50), // Verde
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Unirse",
+                                            fontFamily = YellowPeach,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.Black
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            selectedEvento = evento
+                                            showEditDialog = true
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2196F3), // Azul
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = "+Info",
+                                            fontFamily = YellowPeach,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE91E63),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Añadir")
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Añadir evento")
+            }
         }
     }
+
+    if (showAddDialog) {
+        AddEventDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { nuevoEvento ->
+                db.collection("eventos").add(nuevoEvento)
+                    .addOnSuccessListener {
+                        Toast.makeText(navController.context, "Evento añadido", Toast.LENGTH_SHORT).show()
+                        showAddDialog = false
+                    }
+            }
+        )
+    }
+
+    if (showEditDialog && selectedEvento != null) {
+        EditEventDialog(
+            evento = selectedEvento!!,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedEvento ->
+                db.collection("eventos").document(updatedEvento.id).set(updatedEvento)
+                    .addOnSuccessListener {
+                        Toast.makeText(navController.context, "Evento actualizado", Toast.LENGTH_SHORT).show()
+                        showEditDialog = false
+                    }
+            }
+        )
+    }
+}
+
+@Composable
+fun AddEventDialog(
+    onDismiss: () -> Unit,
+    onSave: (Evento) -> Unit
+) {
+    var titulo by remember { mutableStateOf("") }
+    var descripcion by remember { mutableStateOf("") }
+    var ubicacion by remember { mutableStateOf("") }
+    var fecha by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val nuevoEvento = Evento(
+                    titulo = titulo,
+                    descripcion = descripcion,
+                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
+                    fecha = Timestamp.now(), // Temporalmente la fecha actual
+                    maxParticipantes = 15, // Por defecto 15
+                    tipo = tipo,
+                    creadorId = Firebase.auth.currentUser?.uid ?: ""
+                )
+                onSave(nuevoEvento)
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Añadir Evento") },
+        text = {
+            Column {
+                TextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título") }
+                )
+                TextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") }
+                )
+                TextField(
+                    value = ubicacion,
+                    onValueChange = { ubicacion = it },
+                    label = { Text("Ubicación") }
+                )
+                TextField(
+                    value = fecha,
+                    onValueChange = { fecha = it },
+                    label = { Text("Fecha (dd/MM/yyyy)") }
+                )
+                TextField(
+                    value = tipo,
+                    onValueChange = { tipo = it },
+                    label = { Text("Tipo de Evento") }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun EditEventDialog(
+    evento: Evento,
+    onDismiss: () -> Unit,
+    onSave: (Evento) -> Unit
+) {
+    var titulo by remember { mutableStateOf(evento.titulo) }
+    var descripcion by remember { mutableStateOf(evento.descripcion) }
+    var ubicacion by remember { mutableStateOf("${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}") }
+    var fecha by remember { mutableStateOf(evento.fecha.toDate().toString()) }
+    var tipo by remember { mutableStateOf(evento.tipo) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val updatedEvento = evento.copy(
+                    titulo = titulo,
+                    descripcion = descripcion,
+                    ubicacion = GeoPoint(0.0, 0.0), // Temporalmente 0.0, 0.0
+                    fecha = Timestamp.now(), // Temporalmente la fecha actual
+                    tipo = tipo
+                )
+                onSave(updatedEvento)
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Editar Evento") },
+        text = {
+            Column {
+                TextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título") }
+                )
+                TextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") }
+                )
+                TextField(
+                    value = ubicacion,
+                    onValueChange = { ubicacion = it },
+                    label = { Text("Ubicación") }
+                )
+                TextField(
+                    value = fecha,
+                    onValueChange = { fecha = it },
+                    label = { Text("Fecha (dd/MM/yyyy)") }
+                )
+                TextField(
+                    value = tipo,
+                    onValueChange = { tipo = it },
+                    label = { Text("Tipo de Evento") }
+                )
+            }
+        }
+    )
 }

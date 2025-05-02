@@ -8,5 +8,6 @@ data class MascotaPerdida(
     val fechaPerdida: Timestamp = Timestamp.now(),
     val ubicacion: GeoPoint = GeoPoint(0.0, 0.0),
     val fotoUrl: String = "",
-    val encontrado: Boolean = false
+    val encontrado: Boolean = false,
+    val contacto : String = ""
 )

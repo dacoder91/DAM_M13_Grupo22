@@ -25,11 +25,21 @@ import kotlinx.coroutines.tasks.await
 
 @Composable
 fun LoginScreen(navController: NavController) {
+    val auth = Firebase.auth
+    val currentUser = auth.currentUser
+
+    // Verificación de sesión activa
+    if (currentUser != null) {
+        navController.navigate("main") {
+            popUpTo("login") { inclusive = true }
+        }
+        return
+    }
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val auth = Firebase.auth
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
 

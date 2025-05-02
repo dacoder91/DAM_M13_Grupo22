@@ -7,4 +7,6 @@
     <string name="title_activity_mapa_screen">MapaScreen</string>
     <string name="title_activity_mascotas_perdidas_screen">MascotasPerdidasScreen</string>
     <string name="title_activity_profile_screen">ProfileScreen</string>
+    <!-- La clave de la API de Google Maps se carga dinámicamente desde el archivo local.properties -->
+    <string name="maps_api_key">${MAPS_API_KEY}</string>
 </resources>
