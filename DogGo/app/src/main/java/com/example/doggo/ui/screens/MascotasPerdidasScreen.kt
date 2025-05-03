@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -37,6 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import com.google.firebase.firestore.Query
 
+
 @Composable
 fun MascotasPerdidasScreen(
     navController: NavController,
@@ -48,9 +50,19 @@ fun MascotasPerdidasScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedMascota by remember { mutableStateOf<MascotaPerdida?>(null) }
+    var mostrarEncontradas by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        db.collection("mascotasPerdidas").addSnapshotListener { snapshot, _ ->
+    LaunchedEffect(mostrarEncontradas) {
+        val query = if (mostrarEncontradas) {
+            db.collection("mascotasPerdidas")
+                .orderBy("fechaPerdida", Query.Direction.DESCENDING)
+        } else {
+            db.collection("mascotasPerdidas")
+                .whereEqualTo("encontrado", false)
+                .orderBy("fechaPerdida", Query.Direction.DESCENDING)
+        }
+
+        query.addSnapshotListener { snapshot, _ ->
             if (snapshot != null) {
                 mascotasPerdidas = snapshot.documents.mapNotNull { document ->
                     document.toObject(MascotaPerdida::class.java)?.copy(id = document.id)
@@ -68,168 +80,195 @@ fun MascotasPerdidasScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        Button(
-            onClick = {
-                Firebase.auth.signOut()
-                parentNavController.navigate("login") {
-                    popUpTo(0)
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(width = 110.dp, height = 35.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE91E63),
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Salir")
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Salir")
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(40.dp))
-            Text(
-                text = "Mascotas Perdidas",
-                style = TextStyle(fontFamily = YellowPeach, fontSize = 28.sp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Fila superior con checkbox y botón de salir
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(mascotasPerdidas) { mascota ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                                if (mascota.fotoUrl.isNotEmpty()) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(mascota.fotoUrl),
-                                        contentDescription = "Foto de la mascota",
-                                        modifier = Modifier
-                                            .size(192.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                // Checkbox para mostrar encontradas
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = mostrarEncontradas,
+                        onCheckedChange = { mostrarEncontradas = it }
+                    )
+                    Text("Mostrar encontradas")
+                }
+
+                // Botón Salir
+                Button(
+                    onClick = {
+                        Firebase.auth.signOut()
+                        parentNavController.navigate("login") {
+                            popUpTo(0)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE91E63),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Salir")
+                }
+            }
+
+            // Contenido principal
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Mascotas Perdidas",
+                    style = TextStyle(fontFamily = YellowPeach, fontSize = 28.sp),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(mascotasPerdidas) { mascota ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                // Indicador de mascota encontrada
+                                if (mascota.encontrado) {
+                                    Text(
+                                        text = "ENCONTRADA",
+                                        color = Color.Green,
+                                        style = TextStyle(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.align(Alignment.End)
                                     )
-                                } else {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.imagenperroperdido),
-                                        contentDescription = "Sin imagen",
-                                        modifier = Modifier
-                                            .size(192.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text("Nombre: ${mascota.nombreMascota}")
-                            Text("Fecha publicación: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(mascota.fechaPerdida.toDate())}")
-                            Text("Ubicación: ${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}")
-                            Text("Contacto: ${mascota.contacto}")
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                if (mascota.usuarioId == Firebase.auth.currentUser?.uid) {
-                                    IconButton(onClick = {
-                                        selectedMascota = mascota
-                                        showEditDialog = true
-                                    }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
-                                    }
-
-                                    IconButton(onClick = {
-                                        db.collection("mascotasPerdidas").document(mascota.id).delete()
-                                            .addOnSuccessListener {
-                                                Toast.makeText(context, "Mascota eliminada", Toast.LENGTH_SHORT).show()
-                                            }
-                                    }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
-                                    }
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Checkbox(
-                                            checked = mascota.encontrado,
-                                            onCheckedChange = { isChecked ->
-                                                db.collection("mascotasPerdidas").document(mascota.id)
-                                                    .update("encontrado", isChecked)
-                                                    .addOnSuccessListener {
-                                                        Toast.makeText(context, "Estado actualizado", Toast.LENGTH_SHORT).show()
-                                                    }
-                                            }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                    if (mascota.fotoUrl.isNotEmpty()) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(mascota.fotoUrl),
+                                            contentDescription = "Foto de la mascota",
+                                            modifier = Modifier
+                                                .size(192.dp)
+                                                .clip(RoundedCornerShape(8.dp))
                                         )
-                                        Text("¿Encontrado?")
+                                    } else {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.imagenperroperdido),
+                                            contentDescription = "Sin imagen",
+                                            modifier = Modifier
+                                                .size(192.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text("Nombre: ${mascota.nombreMascota}")
+                                Text("Fecha publicación: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(mascota.fechaPerdida.toDate())}")
+                                Text("Ubicación: ${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}")
+                                Text("Contacto: ${mascota.contacto}")
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    if (mascota.usuarioId == Firebase.auth.currentUser?.uid) {
+                                        IconButton(onClick = {
+                                            selectedMascota = mascota
+                                            showEditDialog = true
+                                        }) {
+                                            Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                        }
+
+                                        IconButton(onClick = {
+                                            db.collection("mascotasPerdidas").document(mascota.id).delete()
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(context, "Mascota eliminada", Toast.LENGTH_SHORT).show()
+                                                }
+                                        }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                        }
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = mascota.encontrado,
+                                                onCheckedChange = { isChecked ->
+                                                    db.collection("mascotasPerdidas").document(mascota.id)
+                                                        .update("encontrado", isChecked)
+                                                        .addOnSuccessListener {
+                                                            Toast.makeText(context, "Estado actualizado", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                }
+                                            )
+                                            Text("¿Encontrado?")
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = { showAddDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE91E63),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Añadir anuncio de mascota perdida")
-            }
-
-            if (showAddDialog) {
-                AddLostPetDialog(
-                    onDismiss = { showAddDialog = false },
-                    onSave = { nuevaMascota ->
-                        db.collection("mascotasPerdidas").add(nuevaMascota)
-                            .addOnSuccessListener {
-                                Toast.makeText(navController.context, "Mascota añadida", Toast.LENGTH_SHORT).show()
-                                showAddDialog = false
-                            }
-                    }
-                )
-            }
-
-            if (showEditDialog && selectedMascota != null) {
-                EditLostPetDialog(
-                    mascota = selectedMascota!!,
-                    onDismiss = { showEditDialog = false },
-                    onSave = { updatedMascota ->
-                        db.collection("mascotasPerdidas").document(updatedMascota.id).set(updatedMascota)
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "Anuncio actualizado", Toast.LENGTH_SHORT).show()
-                                showEditDialog = false
-                            }
-                    }
-                )
+                Button(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE91E63),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Añadir anuncio de mascota perdida")
+                }
             }
         }
     }
 
+    if (showAddDialog) {
+        AddLostPetDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = { nuevaMascota ->
+                db.collection("mascotasPerdidas").add(nuevaMascota)
+                    .addOnSuccessListener {
+                        Toast.makeText(navController.context, "Mascota añadida", Toast.LENGTH_SHORT).show()
+                        showAddDialog = false
+                    }
+            }
+        )
+    }
 
+    if (showEditDialog && selectedMascota != null) {
+        EditLostPetDialog(
+            mascota = selectedMascota!!,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedMascota ->
+                db.collection("mascotasPerdidas").document(updatedMascota.id).set(updatedMascota)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Anuncio actualizado", Toast.LENGTH_SHORT).show()
+                        showEditDialog = false
+                    }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -87,7 +87,7 @@ fun EventosScreen(
             ),
             shape = RoundedCornerShape(20.dp)
         ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Salir")
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "")
             Spacer(modifier = Modifier.width(4.dp))
             Text("Salir")
         }
