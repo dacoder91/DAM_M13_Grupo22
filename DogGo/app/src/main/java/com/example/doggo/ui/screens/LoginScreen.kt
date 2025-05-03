@@ -1,5 +1,7 @@
 package com.example.doggo.ui.screens
 
+import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.example.doggo.R
 import androidx.compose.foundation.layout.*
@@ -17,6 +19,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.google.firebase.auth.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
@@ -24,6 +29,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -160,6 +168,7 @@ fun LoginScreen(navController: NavController) {
 
     // Diálogo para registrar una nueva cuenta
     if (showRegisterDialog) {
+        val context = LocalContext.current // Obtén el contexto aquí
         RegisterDialog(
             onDismiss = { showRegisterDialog = false },
             onRegister = { email, password ->
@@ -177,6 +186,10 @@ fun LoginScreen(navController: NavController) {
                             )
 
                             db.collection("usuarios").document(user.uid).set(userData).await()
+
+                            // Enviar correo al usuario
+                            enviarCorreo(context, "Nuevo usuario", email)
+
                             navController.navigate("main") {
                                 popUpTo("login") { inclusive = true }
                             }
@@ -199,6 +212,46 @@ fun LoginScreen(navController: NavController) {
             }
         )
     }
+}
+
+// Función para enviar correo usando EmailJS
+fun enviarCorreo(context: Context, userName: String, userEmail: String) {
+    val url = "https://api.emailjs.com/api/v1.0/email/send"
+    val queue = Volley.newRequestQueue(context)
+
+    val params = JSONObject().apply {
+        put("service_id", "service_pcxvx5t")
+        put("template_id", "template_537zd0a")
+        put("user_id", "mMkoBEUAmfCweGdYC")
+        put("template_params", JSONObject().apply {
+            put("user_name", userName) // Este debe coincidir con {{user_name}} en la plantilla
+            put("user_email", userEmail) // Este debe coincidir con {{user_email}} en la plantilla
+        })
+    }
+
+    val request = object : StringRequest(
+        Method.POST, url,
+        { response ->
+            Log.d("EmailJS", "Correo enviado: $response") // Aquí se registrará "OK"
+        },
+        { error ->
+            Log.e("EmailJS", "Error al enviar el correo: ${error.message}")
+            error.networkResponse?.let {
+                Log.e("EmailJS", "Código de error: ${it.statusCode}")
+                Log.e("EmailJS", "Respuesta: ${String(it.data)}")
+            }
+        }
+    ) {
+        override fun getHeaders(): MutableMap<String, String> {
+            return mutableMapOf("Content-Type" to "application/json")
+        }
+
+        override fun getBody(): ByteArray {
+            return params.toString().toByteArray(Charsets.UTF_8)
+        }
+    }
+
+    queue.add(request)
 }
 
 @Composable

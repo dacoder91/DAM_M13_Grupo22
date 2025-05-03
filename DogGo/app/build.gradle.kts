@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
     implementation(libs.coil.compose)
 
+    
+
 
 
     implementation(libs.firebase.analytics)
@@ -80,6 +82,9 @@ dependencies {
     implementation ("androidx.compose.material:material-icons-extended:1.6.1")
     implementation ("androidx.compose.ui:ui-tooling-preview:1.6.1")
     implementation ("androidx.navigation:navigation-compose:2.7.7")
+
+    implementation ("org.json:json:20210307") // Para el manejo de JSON
+    implementation ("com.android.volley:volley:1.2.1") // 
 
     // Firebase
     implementation (platform("com.google.firebase:firebase-bom:33.11.0"))
