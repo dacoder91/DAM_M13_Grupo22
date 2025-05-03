@@ -147,33 +147,53 @@ fun EventosScreen(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Button(
                                         onClick = {
-                                            if (evento.participantes.size >= 15) {
-                                                Toast.makeText(
-                                                    navController.context,
-                                                    "Evento completo",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            } else {
-                                                val updatedParticipantes = evento.participantes + currentUser!!.uid
-                                                db.collection("eventos").document(evento.id)
-                                                    .update("participantes", updatedParticipantes)
-                                                    .addOnSuccessListener {
-                                                        Toast.makeText(
-                                                            navController.context,
-                                                            "Te has unido al evento",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                    }
+                                            when {
+                                                evento.participantes.contains(currentUser?.uid) -> {
+                                                    Toast.makeText(
+                                                        navController.context,
+                                                        "Ya estás unido a este evento",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                                evento.participantes.size >= evento.maxParticipantes -> {
+                                                    Toast.makeText(
+                                                        navController.context,
+                                                        "Evento completo",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                                else -> {
+                                                    val updatedParticipantes = evento.participantes + currentUser!!.uid
+                                                    db.collection("eventos").document(evento.id)
+                                                        .update("participantes", updatedParticipantes)
+                                                        .addOnSuccessListener {
+                                                            Toast.makeText(
+                                                                navController.context,
+                                                                "¡Te has unido al evento!",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                }
                                             }
                                         },
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF4CAF50), // Verde
+                                            containerColor = if (evento.participantes.contains(currentUser?.uid)) {
+                                                Color.LightGray // Color cuando ya está unido
+                                            } else {
+                                                Color(0xFF4CAF50) // Verde normal
+                                            },
                                             contentColor = Color.White
                                         ),
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     ) {
                                         Text(
-                                            text = "Unirse",
+                                            text = if (evento.participantes.contains(currentUser?.uid)) {
+                                                "Unido ✓"
+                                            } else if (evento.participantes.size >= evento.maxParticipantes) {
+                                                "Completo"
+                                            } else {
+                                                "Unirse"
+                                            },
                                             fontFamily = YellowPeach,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
