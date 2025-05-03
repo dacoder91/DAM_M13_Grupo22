@@ -1,5 +1,6 @@
 package com.example.doggo.ui.screens
 
+import android.widget.Toast
 import com.example.doggo.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -203,12 +205,16 @@ fun LoginScreen(navController: NavController) {
 fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var acceptTerms by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Crear Cuenta") },
         text = {
             Column {
+                // Campo de email
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -216,6 +222,8 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) 
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // Campo de contraseña
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -223,10 +231,31 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) 
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = PasswordVisualTransformation()
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Checkbox para aceptar condiciones de uso
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = acceptTerms,
+                        onCheckedChange = { acceptTerms = it }
+                    )
+                    Text("Aceptar condiciones de uso")
+                }
+
+                // Texto para ver condiciones
+                TextButton(onClick = { showTermsDialog = true }) {
+                    Text("Ver condiciones")
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onRegister(email, password) }) {
+            TextButton(onClick = {
+                if (!acceptTerms) {
+                    Toast.makeText(context, "Debe aceptar las condiciones de uso", Toast.LENGTH_SHORT).show()
+                    return@TextButton
+                }
+                onRegister(email, password)
+            }) {
                 Text("Registrar")
             }
         },
@@ -236,4 +265,23 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) 
             }
         }
     )
+
+    // Diálogo para mostrar las condiciones de uso
+    if (showTermsDialog) {
+        AlertDialog(
+            onDismissRequest = { showTermsDialog = false },
+            title = { Text("Condiciones de Uso") },
+            text = {
+                Text(
+                    "Estas son las condiciones de uso genéricas de la aplicación. " +
+                            "Al registrarte, aceptas cumplir con las políticas y términos establecidos."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showTermsDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
 }
