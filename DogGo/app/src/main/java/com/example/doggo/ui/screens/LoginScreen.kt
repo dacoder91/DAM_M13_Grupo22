@@ -40,6 +40,7 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showRegisterDialog by remember { mutableStateOf(false) }
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
 
@@ -49,8 +50,8 @@ fun LoginScreen(navController: NavController) {
             painter = painterResource(id = R.drawable.imagenfondologin),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop, // Cubre toda la pantalla
-            alpha = 0.3f // Opacidad: cuanto menor, más difuminado
+            contentScale = ContentScale.Crop,
+            alpha = 0.3f
         )
 
         // Contenido por encima
@@ -62,7 +63,7 @@ fun LoginScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "\uD83D\uDC3E DogGo", // emoticono huellitas
+                text = "\uD83D\uDC3E DogGo",
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
@@ -132,50 +133,10 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Crear Cuenta
+            // Texto para abrir el diálogo de registro
             TextButton(
-                onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        errorMessage = "Por favor completa todos los campos"
-                        return@TextButton
-                    }
-
-
-                    scope.launch {
-                        isLoading = true
-                        try {
-                            auth.createUserWithEmailAndPassword(email, password).await()
-                            val user = auth.currentUser
-                            user?.let {
-                                val userData = hashMapOf(
-                                    "nombre" to "Nuevo usuario",
-                                    "email" to email,
-                                    "mascotas" to listOf<String>(),
-                                    "fechaRegistro" to FieldValue.serverTimestamp()
-                                )
-
-                                db.collection("usuarios").document(user.uid).set(userData).await()
-                                navController.navigate("main") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            } ?: run {
-                                errorMessage = "Error al obtener usuario"
-                            }
-                        } catch (e: FirebaseAuthWeakPasswordException) {
-                            errorMessage = "La contraseña debe tener al menos 6 caracteres"
-                        } catch (e: FirebaseAuthInvalidCredentialsException) {
-                            errorMessage = "Email inválido"
-                        } catch (e: FirebaseAuthUserCollisionException) {
-                            errorMessage = "El email ya está registrado"
-                        } catch (e: Exception) {
-                            errorMessage = "Error: ${e.message}"
-                        } finally {
-                            isLoading = false
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                onClick = { showRegisterDialog = true },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("¿No tienes cuenta? ¡Regístrate!", style = MaterialTheme.typography.bodyMedium)
             }
@@ -194,4 +155,85 @@ fun LoginScreen(navController: NavController) {
             }
         }
     }
+
+    // Diálogo para registrar una nueva cuenta
+    if (showRegisterDialog) {
+        RegisterDialog(
+            onDismiss = { showRegisterDialog = false },
+            onRegister = { email, password ->
+                scope.launch {
+                    isLoading = true
+                    try {
+                        auth.createUserWithEmailAndPassword(email, password).await()
+                        val user = auth.currentUser
+                        user?.let {
+                            val userData = hashMapOf(
+                                "nombre" to "Nuevo usuario",
+                                "email" to email,
+                                "mascotas" to listOf<String>(),
+                                "fechaRegistro" to FieldValue.serverTimestamp()
+                            )
+
+                            db.collection("usuarios").document(user.uid).set(userData).await()
+                            navController.navigate("main") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        } ?: run {
+                            errorMessage = "Error al obtener usuario"
+                        }
+                    } catch (e: FirebaseAuthWeakPasswordException) {
+                        errorMessage = "La contraseña debe tener al menos 6 caracteres"
+                    } catch (e: FirebaseAuthInvalidCredentialsException) {
+                        errorMessage = "Email inválido"
+                    } catch (e: FirebaseAuthUserCollisionException) {
+                        errorMessage = "El email ya está registrado"
+                    } catch (e: Exception) {
+                        errorMessage = "Error: ${e.message}"
+                    } finally {
+                        isLoading = false
+                        showRegisterDialog = false
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Crear Cuenta") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Correo electrónico") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onRegister(email, password) }) {
+                Text("Registrar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
