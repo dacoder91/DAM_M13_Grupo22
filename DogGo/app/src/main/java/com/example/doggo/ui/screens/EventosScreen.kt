@@ -48,6 +48,7 @@ fun EventosScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
     var selectedEvento by remember { mutableStateOf<Evento?>(null) }
+    var showMyEventsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         db.collection("eventos").addSnapshotListener { snapshot, _ ->
@@ -120,6 +121,17 @@ fun EventosScreen(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { showMyEventsDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Text("Mis Eventos")
+            }
 
             LazyColumn(
                 modifier = Modifier.weight(1f),
@@ -306,6 +318,128 @@ fun EventosScreen(
         InfoEventDialog(
             evento = selectedEvento!!,
             onDismiss = { showInfoDialog = false }
+        )
+    }
+
+    if (showMyEventsDialog) {
+        AlertDialog(
+            onDismissRequest = { showMyEventsDialog = false },
+            modifier = Modifier.fillMaxHeight(0.8f),
+            title = {
+                Text(
+                    text = "Mis Eventos",
+                    fontFamily = YellowPeach,
+                    fontSize = 24.sp
+                )
+            },
+            text = {
+                val myEvents = eventos.filter { it.participantes.contains(currentUser?.uid) }
+
+                if (myEvents.isEmpty()) {
+                    Text("No estás apuntado a ningún evento")
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(myEvents) { evento ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Título: ${evento.titulo}", fontSize = 18.sp)
+                                            Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
+                                            Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                                            Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
+                                        }
+
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Button(
+                                                onClick = {
+                                                    val updatedParticipantes = evento.participantes - currentUser!!.uid
+                                                    db.collection("eventos").document(evento.id)
+                                                        .update("participantes", updatedParticipantes)
+                                                        .addOnSuccessListener {
+                                                            Toast.makeText(
+                                                                navController.context,
+                                                                "Te has salido del evento",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                            showMyEventsDialog = false // Solo cierra el diálogo
+                                                        }
+                                                },
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFFF44336),
+                                                    contentColor = Color.White
+                                                ),
+                                                modifier = Modifier.padding(bottom = 8.dp)
+                                            ) {
+                                                Text("Borrarse")
+                                            }
+
+                                            Button(
+                                                onClick = {
+                                                    selectedEvento = evento
+                                                    showMyEventsDialog = false
+                                                    showInfoDialog = true
+                                                },
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF2196F3), // Azul
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text("+Info")
+                                            }
+                                        }
+                                    }
+
+                                    if (evento.creadorId == currentUser?.uid) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.Start,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            IconButton(onClick = {
+                                                selectedEvento = evento
+                                                showMyEventsDialog = false
+                                                showEditDialog = true
+                                            }) {
+                                                Icon(Icons.Default.Edit, contentDescription = "Editar")
+                                            }
+
+                                            IconButton(onClick = {
+                                                db.collection("eventos").document(evento.id).delete()
+                                                    .addOnSuccessListener {
+                                                        Toast.makeText(
+                                                            navController.context,
+                                                            "Evento eliminado",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                            }) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMyEventsDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
         )
     }
 }
