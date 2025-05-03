@@ -35,6 +35,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.google.firebase.firestore.Query
 
 @Composable
 fun MascotasPerdidasScreen(

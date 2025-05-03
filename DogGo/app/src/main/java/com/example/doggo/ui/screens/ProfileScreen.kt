@@ -32,9 +32,14 @@ import com.example.doggo.R
 import com.example.doggo.models.Mascota
 import com.example.doggo.models.Usuario
 import com.example.doggo.ui.screens.ui.theme.YellowPeach
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 // Pantalla principal del perfil del usuario. Muestra la información del usuario,
 // la lista de mascotas asociadas y permite editar el perfil, añadir o editar mascotas.
@@ -314,7 +319,7 @@ fun ProfileScreen(
                                     Column {
                                         Text(text = "Nombre: ${mascota.nombre}")
                                         Text(text = "Raza: ${mascota.raza}")
-                                        Text(text = "Edad: ${mascota.edad} años")
+                                        Text(text = "Edad: ${calculateAge(mascota.fechaNacimiento.toDate())} años")
                                     }
                                 }
 
@@ -434,6 +439,7 @@ fun EditProfileDialog(
 
 // Diálogo para añadir una nueva mascota. Permite ingresar el nombre, raza,
 // edad y URL de la foto de la mascota, y guarda la información en Firestore.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPetDialog(
     usuarioId: String,
@@ -442,8 +448,27 @@ fun AddPetDialog(
 ) {
     var nombre by remember { mutableStateOf("") }
     var raza by remember { mutableStateOf("") }
-    var edad by remember { mutableStateOf("") }
+    var fechaNacimiento by remember { mutableStateOf<Long?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var fotoUrl by remember { mutableStateOf("") }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    fechaNacimiento = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -460,11 +485,15 @@ fun AddPetDialog(
                     onValueChange = { raza = it },
                     label = { Text("Raza") }
                 )
-                OutlinedTextField(
-                    value = edad,
-                    onValueChange = { edad = it },
-                    label = { Text("Edad") },
-                    singleLine = true
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha de Nacimiento")
+                }
+                Text(
+                    text = "Fecha seleccionada: ${
+                        fechaNacimiento?.let {
+                            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it))
+                        } ?: "No seleccionada"
+                    }"
                 )
                 OutlinedTextField(
                     value = fotoUrl,
@@ -485,13 +514,16 @@ fun AddPetDialog(
         },
         confirmButton = {
             TextButton(onClick = {
+                if (fechaNacimiento == null) {
+                    return@TextButton
+                }
                 val newPet = Mascota(
                     id = "",
                     nombre = nombre,
                     raza = raza,
-                    edad = edad.toIntOrNull() ?: 0,
                     fotoUrl = fotoUrl,
-                    usuarioId = usuarioId
+                    usuarioId = usuarioId,
+                    fechaNacimiento = Timestamp(Date(fechaNacimiento!!))
                 )
                 onSave(newPet)
             }) {
@@ -506,6 +538,8 @@ fun AddPetDialog(
     )
 }
 
+// Modifica el EditPetDialog:
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditPetDialog(
     mascota: Mascota,
@@ -514,7 +548,6 @@ fun EditPetDialog(
 ) {
     var nombre by remember { mutableStateOf(mascota.nombre) }
     var raza by remember { mutableStateOf(mascota.raza) }
-    var edad by remember { mutableStateOf(mascota.edad.toString()) }
     var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
 
     AlertDialog(
@@ -532,12 +565,12 @@ fun EditPetDialog(
                     onValueChange = { raza = it },
                     label = { Text("Raza") }
                 )
-                OutlinedTextField(
-                    value = edad,
-                    onValueChange = { edad = it },
-                    label = { Text("Edad") },
-                    singleLine = true
-                )
+                // Mostrar fecha de nacimiento (solo lectura)
+                Text("Fecha de Nacimiento: ${
+                    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        .format(mascota.fechaNacimiento.toDate())
+                }")
+                Text("Edad: ${calculateAge(mascota.fechaNacimiento.toDate())} años")
                 OutlinedTextField(
                     value = fotoUrl,
                     onValueChange = { fotoUrl = it },
@@ -560,7 +593,6 @@ fun EditPetDialog(
                 val updatedPet = mascota.copy(
                     nombre = nombre,
                     raza = raza,
-                    edad = edad.toIntOrNull() ?: 0,
                     fotoUrl = fotoUrl
                 )
                 onSave(updatedPet)
@@ -574,4 +606,19 @@ fun EditPetDialog(
             }
         }
     )
+}
+
+// Función para calcular la edad
+fun calculateAge(birthDate: Date): Int {
+    val today = Calendar.getInstance()
+    val birthCalendar = Calendar.getInstance().apply { time = birthDate }
+
+    var age = today.get(Calendar.YEAR) - birthCalendar.get(Calendar.YEAR)
+
+    // Si aún no ha pasado el cumpleaños este año, restar un año
+    if (today.get(Calendar.DAY_OF_YEAR) < birthCalendar.get(Calendar.DAY_OF_YEAR)) {
+        age--
+    }
+
+    return age
 }

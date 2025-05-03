@@ -171,7 +171,7 @@ fun LoginScreen(navController: NavController) {
         val context = LocalContext.current // Obtén el contexto aquí
         RegisterDialog(
             onDismiss = { showRegisterDialog = false },
-            onRegister = { email, password ->
+            onRegister = { username, email, password ->
                 scope.launch {
                     isLoading = true
                     try {
@@ -179,7 +179,7 @@ fun LoginScreen(navController: NavController) {
                         val user = auth.currentUser
                         user?.let {
                             val userData = hashMapOf(
-                                "nombre" to "Nuevo usuario",
+                                "nombre" to username, // Guardar el nombre de usuario
                                 "email" to email,
                                 "mascotas" to listOf<String>(),
                                 "fechaRegistro" to FieldValue.serverTimestamp()
@@ -188,7 +188,7 @@ fun LoginScreen(navController: NavController) {
                             db.collection("usuarios").document(user.uid).set(userData).await()
 
                             // Enviar correo al usuario
-                            enviarCorreo(context, "Nuevo usuario", email)
+                            enviarCorreo(context, username, email)
 
                             navController.navigate("main") {
                                 popUpTo("login") { inclusive = true }
@@ -255,7 +255,8 @@ fun enviarCorreo(context: Context, userName: String, userEmail: String) {
 }
 
 @Composable
-fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) {
+fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String, String) -> Unit) {
+    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var acceptTerms by remember { mutableStateOf(false) }
@@ -267,6 +268,15 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) 
         title = { Text("Crear Cuenta") },
         text = {
             Column {
+                // Campo de nombre de usuario
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Nombre de usuario") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Campo de email
                 OutlinedTextField(
                     value = email,
@@ -303,11 +313,46 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String) -> Unit) 
         },
         confirmButton = {
             TextButton(onClick = {
+                // Primero valida si los campos están completos
+                if (username.isBlank() || email.isBlank() || password.isBlank()) {
+                    Toast.makeText(context, "Debe rellenar todos los campos", Toast.LENGTH_SHORT).show()
+                    return@TextButton
+                }
+
+                // Luego valida si las condiciones de uso están aceptadas
                 if (!acceptTerms) {
                     Toast.makeText(context, "Debe aceptar las condiciones de uso", Toast.LENGTH_SHORT).show()
                     return@TextButton
                 }
-                onRegister(email, password)
+
+                // Verificar si el email ya existe
+                val db = FirebaseFirestore.getInstance()
+                db.collection("usuarios")
+                    .whereEqualTo("email", email)
+                    .get()
+                    .addOnSuccessListener { emailDocuments ->
+                        if (!emailDocuments.isEmpty) {
+                            Toast.makeText(context, "El email ya ha sido registrado", Toast.LENGTH_SHORT).show()
+                        } else {
+                            // Verificar si el nombre de usuario ya existe
+                            db.collection("usuarios")
+                                .whereEqualTo("nombre", username)
+                                .get()
+                                .addOnSuccessListener { usernameDocuments ->
+                                    if (!usernameDocuments.isEmpty) {
+                                        Toast.makeText(context, "El nombre de usuario no está disponible", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        onRegister(username, email, password)
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Error al verificar el nombre de usuario, el nombre ya esta en uso", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Error al verificar el email. Mail ya registrado", Toast.LENGTH_SHORT).show()
+                    }
             }) {
                 Text("Registrar")
             }
