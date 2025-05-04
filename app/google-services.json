@@ -1,0 +1,76 @@
+{
+  "project_info": {
+    "project_number": "1084172132050",
+    "project_id": "dam-m13-grupo22",
+    "storage_bucket": "dam-m13-grupo22.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084172132050:android:19ea29bace429528b8d70b",
+        "android_client_info": {
+          "package_name": "com.example.DogGo2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANfSH42uruWGf7gj0ElCDdviHV4lKXJyQ"
+        },
+        {
+          "current_key": "AIzaSyCuNLh9AN4-e3X1EKuje6VUzJcRGgz9J9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084172132050:android:d7df5a54fd6c72f4b8d70b",
+        "android_client_info": {
+          "package_name": "com.example.doggo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANfSH42uruWGf7gj0ElCDdviHV4lKXJyQ"
+        },
+        {
+          "current_key": "AIzaSyCuNLh9AN4-e3X1EKuje6VUzJcRGgz9J9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1084172132050:android:cfd82f64f57e3843b8d70b",
+        "android_client_info": {
+          "package_name": "com.example.doggo2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANfSH42uruWGf7gj0ElCDdviHV4lKXJyQ"
+        },
+        {
+          "current_key": "AIzaSyCuNLh9AN4-e3X1EKuje6VUzJcRGgz9J9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
