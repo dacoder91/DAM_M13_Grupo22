@@ -20,12 +20,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Crea una variable BuildConfig con la API Key
-        buildConfigField("String", "MAPS_API_KEY", "\"${properties["MAPS_API_KEY"]}\"")
-
         // Cargar la clave de la API desde local.properties
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
+
+        // Crea una variable BuildConfig con la API Key
+        buildConfigField("String", "MAPS_API_KEY", "\"${properties["MAPS_API_KEY"]}\"")
         manifestPlaceholders["MAPS_API_KEY"] = properties.getProperty("MAPS_API_KEY")
     }
 
@@ -64,6 +64,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
     implementation(libs.google.firebase.storage.ktx)
+    implementation(libs.play.services.places)
+    implementation(libs.play.services.fitness)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -97,7 +99,8 @@ dependencies {
 
     // Maps
     implementation (libs.maps.compose)
-    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation ("com.google.android.gms:play-services-maps:18.0.1")
+    implementation ("com.google.android.libraries.places:places:2.6.0")
 
 
     // Coil para imágenes
