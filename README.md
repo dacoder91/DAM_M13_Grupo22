@@ -1,7 +1,14 @@
- # DAM_M13_Grupo22
-Repositorio del proyecto del Grupo 22 de DAM/LinkiaFP
+<p align="center">
+  <img src="https://i.imgur.com/X18EwAv.png" alt="Logo del proyecto" width="200">
+</p> 
 
-Hemos decidido hacer el proyecto sobre una aplicación para android que trataría sobre una app para dueños de mascotas, enfocado a perros.
+<p align="center">
+  <img src="https://i.imgur.com/mVv6xL9.png" alt="Logo del proyecto" width="200">
+</p> 
+
+Repositorio del proyecto del Grupo 22 de DAM/LinkiaFP. "DogGo"
+
+El proyecto trata sobre una aplicación para dispositivos Android para que dueños de mascotas, enfocado a perros.
 
 Con las siguientes características:
 
@@ -13,20 +20,19 @@ Con las siguientes características:
  
 
 Posibles características adicionales futuras: 
- 
 
-Historial veterinario de la mascota 
+- Historial veterinario de la mascota 
 
-Calculadora de alimentación. 
+- Calculadora de alimentación. 
 
-Sistema para encontrar canguros de perros 
+- Sistema para encontrar canguros de perros 
 
-Entrenamiento y educación canina 
-
+- Entrenamiento y educación canina 
 
 
-También indicar que vamos a realizar el Backend en alguna plataforma gratuita como Firebase o Supabase. 
+La app utiliza Kotlin,Firebase como backend y JetpackCompose para el interfaz de usuario.
 
+Miembros:
 Cris, Issac y David
 
 
