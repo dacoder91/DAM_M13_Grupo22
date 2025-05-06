@@ -4,6 +4,7 @@ import Evento
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,10 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -32,6 +35,10 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.Timestamp
 import com.example.doggo2.R
 import com.example.doggo2.ui.screens.ui.theme.YellowPeach
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -452,10 +459,13 @@ fun AddEventDialog(
 ) {
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
-    var ubicacion by remember { mutableStateOf("") }
+    var ubicacion by remember { mutableStateOf(GeoPoint(41.3879, 2.16992)) } // Barcelona por defecto
     var fecha by remember { mutableStateOf<Long?>(null) }
-    var showDatePicker by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showDescriptionDialog by remember { mutableStateOf(false) }
+    var showMapDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
@@ -471,7 +481,7 @@ fun AddEventDialog(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                    Text("Cancelar")
                 }
             }
         ) {
@@ -479,14 +489,29 @@ fun AddEventDialog(
         }
     }
 
+    if (showMapDialog) {
+        MapDialog(
+            initialLocation = ubicacion,
+            onDismiss = { showMapDialog = false },
+            onLocationSelected = { selectedLocation ->
+                ubicacion = selectedLocation
+                showMapDialog = false
+            }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
+                if (ubicacion.latitude == 0.0 && ubicacion.longitude == 0.0) {
+                    Toast.makeText(context, "Por favor selecciona una ubicación en el mapa", Toast.LENGTH_SHORT).show()
+                    return@TextButton
+                }
                 val nuevoEvento = Evento(
                     titulo = titulo,
                     descripcion = descripcion,
-                    ubicacion = GeoPoint(0.0, 0.0),
+                    ubicacion = ubicacion,
                     fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
                     maxParticipantes = 15,
                     tipo = tipo,
@@ -513,12 +538,8 @@ fun AddEventDialog(
                 TextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
-                    label = { Text("Descripción") }
-                )
-                TextField(
-                    value = ubicacion,
-                    onValueChange = { ubicacion = it },
-                    label = { Text("Ubicación") }
+                    label = { Text("Descripción") },
+                    modifier = Modifier.clickable { showDescriptionDialog = true }
                 )
                 Button(onClick = { showDatePicker = true }) {
                     Text("Seleccionar Fecha")
@@ -529,9 +550,24 @@ fun AddEventDialog(
                     onValueChange = { tipo = it },
                     label = { Text("Tipo de Evento") }
                 )
+                Button(onClick = { showMapDialog = true }) {
+                    Text("Seleccionar Ubicación en el Mapa")
+                }
+                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
             }
         }
     )
+
+    if (showDescriptionDialog) {
+        LongDescriptionDialog(
+            initialText = descripcion,
+            onDismiss = { showDescriptionDialog = false },
+            onSave = {
+                descripcion = it
+                showDescriptionDialog = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -543,11 +579,13 @@ fun EditEventDialog(
 ) {
     var titulo by remember { mutableStateOf(evento.titulo) }
     var descripcion by remember { mutableStateOf(evento.descripcion) }
-    var ubicacion by remember { mutableStateOf("${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}") }
+    var ubicacion by remember { mutableStateOf(evento.ubicacion) }
     var fecha by remember { mutableStateOf<Long?>(evento.fecha.toDate().time) }
-    var showDatePicker by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf(evento.tipo) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var showDescriptionDialog by remember { mutableStateOf(false) }
+    var showMapDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fecha)
@@ -563,7 +601,7 @@ fun EditEventDialog(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                    Text("Cancelar")
                 }
             }
         ) {
@@ -571,14 +609,29 @@ fun EditEventDialog(
         }
     }
 
+    if (showMapDialog) {
+        MapDialog(
+            initialLocation = ubicacion,
+            onDismiss = { showMapDialog = false },
+            onLocationSelected = { selectedLocation ->
+                ubicacion = selectedLocation
+                showMapDialog = false
+            }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
+                if (ubicacion.latitude == 0.0 && ubicacion.longitude == 0.0) {
+                    Toast.makeText(context, "Por favor selecciona una ubicación en el mapa", Toast.LENGTH_SHORT).show()
+                    return@TextButton
+                }
                 val updatedEvento = evento.copy(
                     titulo = titulo,
                     descripcion = descripcion,
-                    ubicacion = GeoPoint(0.0, 0.0),
+                    ubicacion = ubicacion,
                     fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
                     tipo = tipo
                 )
@@ -603,12 +656,8 @@ fun EditEventDialog(
                 TextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
-                    label = { Text("Descripción") }
-                )
-                TextField(
-                    value = ubicacion,
-                    onValueChange = { ubicacion = it },
-                    label = { Text("Ubicación") }
+                    label = { Text("Descripción") },
+                    modifier = Modifier.clickable { showDescriptionDialog = true }
                 )
                 Button(onClick = { showDatePicker = true }) {
                     Text("Seleccionar Fecha")
@@ -619,6 +668,10 @@ fun EditEventDialog(
                     onValueChange = { tipo = it },
                     label = { Text("Tipo de Evento") }
                 )
+                Button(onClick = { showMapDialog = true }) {
+                    Text("Seleccionar Ubicación en el Mapa")
+                }
+                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
             }
         }
     )
@@ -673,6 +726,8 @@ fun InfoEventDialog(
     evento: Evento,
     onDismiss: () -> Unit
 ) {
+    var showLocationDialog by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -686,10 +741,113 @@ fun InfoEventDialog(
                 Text("Título: ${evento.titulo}", fontWeight = FontWeight.Bold)
                 Text("Descripción: ${evento.descripcion}")
                 Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                Button(
+                    onClick = { showLocationDialog = true },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Ver Ubicación")
+                }
                 Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
                 Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
                 Text("Tipo: ${evento.tipo}")
             }
+        }
+    )
+
+    if (showLocationDialog) {
+        LocationDialog(
+            location = evento.ubicacion,
+            onDismiss = { showLocationDialog = false }
+        )
+    }
+}
+
+@Composable
+fun LocationDialog(
+    location: GeoPoint,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Atrás")
+            }
+        },
+        title = { Text("Ubicación del Evento") },
+        text = {
+            Column {
+                Text("Latitud: ${location.latitude}")
+                Text("Longitud: ${location.longitude}")
+                Spacer(modifier = Modifier.height(16.dp))
+                AndroidView(
+                    factory = { context ->
+                        MapView(context).apply {
+                            onCreate(null)
+                            getMapAsync { googleMap ->
+                                val eventLocation = LatLng(location.latitude, location.longitude)
+                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(eventLocation, 15f))
+                                googleMap.addMarker(MarkerOptions().position(eventLocation).title("Ubicación del Evento"))
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun MapDialog(
+    initialLocation: GeoPoint,
+    onDismiss: () -> Unit,
+    onLocationSelected: (GeoPoint) -> Unit
+) {
+    var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                if (selectedLocation == null) {
+                    Toast.makeText(context, "Por favor selecciona un punto en el mapa", Toast.LENGTH_SHORT).show()
+                } else {
+                    onLocationSelected(selectedLocation!!)
+                }
+            }) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Atrás")
+            }
+        },
+        title = { Text("Seleccionar Ubicación") },
+        text = {
+            AndroidView(
+                factory = { context ->
+                    MapView(context).apply {
+                        onCreate(null)
+                        getMapAsync { googleMap ->
+                            val initialLatLng = LatLng(initialLocation.latitude, initialLocation.longitude)
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLatLng, 12f))
+                            googleMap.setOnMapClickListener { latLng ->
+                                selectedLocation = GeoPoint(latLng.latitude, latLng.longitude)
+                                googleMap.clear()
+                                googleMap.addMarker(MarkerOptions().position(latLng))
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            )
         }
     )
 }
