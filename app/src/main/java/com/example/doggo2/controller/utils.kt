@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +28,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.firestore.GeoPoint
 import org.json.JSONObject
 import java.util.Calendar
 import java.util.Date
@@ -236,4 +238,20 @@ fun ActionButton(
             tint = Color.White
         )
     }
+}
+
+fun validarCamposEvento(
+    titulo: String,
+    descripcion: String,
+    ubicacion: GeoPoint,
+    fecha: Long?,
+    tipo: String,
+    context: Context
+): Boolean {
+    if (titulo.isBlank() || descripcion.isBlank() || tipo.isBlank() || fecha == null ||
+        (ubicacion.latitude == 0.0 && ubicacion.longitude == 0.0)) {
+        Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
+        return false
+    }
+    return true
 }

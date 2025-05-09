@@ -22,25 +22,17 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,21 +48,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo2.R
 import com.example.doggo2.models.MascotaPerdida
 import com.example.doggo2.ui.screens.ui.theme.YellowPeach
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -308,257 +293,3 @@ fun MascotasPerdidasScreen(
     }
 }
 
-//Dialogo para añadir mascota perdida
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddLostPetDialog(
-    onDismiss: () -> Unit,
-    onSave: (MascotaPerdida) -> Unit
-) {
-    var nombreMascota by remember { mutableStateOf("") }
-    var fechaPerdida by remember { mutableStateOf<Long?>(null) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var ubicacion by remember { mutableStateOf(GeoPoint(41.3879, 2.16992)) } // Posición inicial: Barcelona
-    var fotoUrl by remember { mutableStateOf("") }
-    var encontrado by remember { mutableStateOf(false) }
-    var contacto by remember { mutableStateOf("") }
-
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState()
-        val confirmEnabled = remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
-
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        fechaPerdida = datePickerState.selectedDateMillis
-                        showDatePicker = false
-                    },
-                    enabled = confirmEnabled.value
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    AlertDialog(
-        modifier = Modifier.fillMaxWidth(),
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                val nuevaMascota = MascotaPerdida(
-                    usuarioId = Firebase.auth.currentUser?.uid ?: "",
-                    nombreMascota = nombreMascota,
-                    fechaPerdida = fechaPerdida?.let { Timestamp(it / 1000, 0) } ?: Timestamp.now(),
-                    ubicacion = ubicacion,
-                    fotoUrl = fotoUrl,
-                    encontrado = encontrado,
-                    contacto = contacto
-                )
-                onSave(nuevaMascota)
-            }) {
-                Text("Guardar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        },
-        title = { Text("Añadir Mascota Perdida") },
-        text = {
-            Column {
-                TextField(
-                    value = nombreMascota,
-                    onValueChange = { nombreMascota = it },
-                    label = { Text("Nombre de la Mascota") }
-                )
-                Button(onClick = { showDatePicker = true }) {
-                    Text("Seleccionar Fecha de Pérdida")
-                }
-                Text("Fecha seleccionada: ${fechaPerdida?.let { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it) } ?: "No seleccionada"}")
-                Text("Ubicación inicial: ${ubicacion.latitude}, ${ubicacion.longitude}")
-                TextField(
-                    value = fotoUrl,
-                    onValueChange = { fotoUrl = it },
-                    label = { Text("URL de la Foto") }
-                )
-                TextField(
-                    value = contacto,
-                    onValueChange = { contacto = it },
-                    label = { Text("Contacto (Teléfono o Email)") }
-                )
-            }
-        }
-    )
-}
-
-//Dialogo para editar mascota perdida
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EditLostPetDialog(
-    mascota: MascotaPerdida,
-    onDismiss: () -> Unit,
-    onSave: (MascotaPerdida) -> Unit
-) {
-    var nombreMascota by remember { mutableStateOf(mascota.nombreMascota) }
-    var fechaPerdida by remember { mutableStateOf(mascota.fechaPerdida.toDate().time) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var ubicacion by remember { mutableStateOf(mascota.ubicacion) } // Ubicación inicial del anuncio
-    var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
-    var contacto by remember { mutableStateOf(mascota.contacto) }
-    var showMapDialog by remember { mutableStateOf(false) } // Estado para mostrar el diálogo del mapa
-
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaPerdida)
-        val confirmEnabled = remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
-
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        fechaPerdida = datePickerState.selectedDateMillis ?: fechaPerdida
-                        showDatePicker = false
-                    },
-                    enabled = confirmEnabled.value
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    if (showMapDialog) {
-        MapDialog2(
-            initialLocation = ubicacion,
-            onDismiss = { showMapDialog = false },
-            onLocationSelected = { selectedLocation ->
-                ubicacion = selectedLocation
-                showMapDialog = false
-            }
-        )
-    }
-
-    AlertDialog(
-        modifier = Modifier.fillMaxWidth(),
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                val updatedMascota = mascota.copy(
-                    nombreMascota = nombreMascota,
-                    fechaPerdida = Timestamp(fechaPerdida / 1000, 0),
-                    ubicacion = ubicacion,
-                    fotoUrl = fotoUrl,
-                    contacto = contacto
-                )
-                onSave(updatedMascota)
-            }) {
-                Text("Guardar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        },
-        title = { Text("Editar Mascota Perdida") },
-        text = {
-            Column {
-                TextField(
-                    value = nombreMascota,
-                    onValueChange = { nombreMascota = it },
-                    label = { Text("Nombre de la Mascota") }
-                )
-                Button(onClick = { showDatePicker = true }) {
-                    Text("Seleccionar Fecha de Pérdida")
-                }
-                Text("Fecha seleccionada: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(fechaPerdida)}")
-                Button(onClick = { showMapDialog = true }) {
-                    Text("Seleccionar Ubicación en el Mapa")
-                }
-                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
-                TextField(
-                    value = fotoUrl,
-                    onValueChange = { fotoUrl = it },
-                    label = { Text("URL de la Foto") }
-                )
-                TextField(
-                    value = contacto,
-                    onValueChange = { contacto = it },
-                    label = { Text("Contacto (Teléfono o Email)") }
-                )
-            }
-        }
-    )
-}
-
-//Dialogo para seleccionar ubicacion en el mapa
-@Composable
-fun MapDialog2(
-    initialLocation: GeoPoint,
-    onDismiss: () -> Unit,
-    onLocationSelected: (GeoPoint) -> Unit
-) {
-    var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
-    val context = LocalContext.current
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                if (selectedLocation == null) {
-                    // Mostrar el Toast directamente en el evento onClick
-                    Toast.makeText(context, "Por favor selecciona una ubicación", Toast.LENGTH_SHORT).show()
-                } else {
-                    onLocationSelected(selectedLocation!!)
-                }
-            }) {
-                Text("Aceptar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Atrás")
-            }
-        },
-        title = { Text("Seleccionar Ubicación") },
-        text = {
-            AndroidView(
-                factory = { context ->
-                    MapView(context).apply {
-                        onCreate(null)
-                        getMapAsync { googleMap ->
-                            val initialLatLng = LatLng(initialLocation.latitude, initialLocation.longitude)
-                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLatLng, 12f))
-                            googleMap.setOnMapClickListener { latLng ->
-                                selectedLocation = GeoPoint(latLng.latitude, latLng.longitude)
-                                googleMap.clear()
-                                googleMap.addMarker(MarkerOptions().position(latLng))
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp)
-            )
-        }
-    )
-}

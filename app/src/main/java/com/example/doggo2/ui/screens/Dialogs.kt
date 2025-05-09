@@ -1,13 +1,16 @@
 package com.example.doggo2.ui.screens
 
+import Evento
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -16,11 +19,14 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,14 +35,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.models.Mascota
 import com.example.doggo2.controller.calculateAge
+import com.example.doggo2.controller.validarCamposEvento
+import com.example.doggo2.models.MascotaPerdida
 import com.example.doggo2.models.Usuario
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.auth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.GeoPoint
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -424,4 +442,824 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String, String) -
             }
         )
     }
+}
+
+//Dialogo para añadir mascota perdida
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddLostPetDialog(
+    onDismiss: () -> Unit,
+    onSave: (MascotaPerdida) -> Unit
+) {
+    var nombreMascota by remember { mutableStateOf("") }
+    var fechaPerdida by remember { mutableStateOf<Long?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var ubicacion by remember {
+        mutableStateOf(
+            GeoPoint(
+                41.3879,
+                2.16992
+            )
+        )
+    } // Posición inicial: Barcelona
+    var fotoUrl by remember { mutableStateOf("") }
+    var encontrado by remember { mutableStateOf(false) }
+    var contacto by remember { mutableStateOf("") }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        val confirmEnabled =
+            remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        fechaPerdida = datePickerState.selectedDateMillis
+                        showDatePicker = false
+                    },
+                    enabled = confirmEnabled.value
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    AlertDialog(
+        modifier = Modifier.fillMaxWidth(),
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val nuevaMascota = MascotaPerdida(
+                    usuarioId = Firebase.auth.currentUser?.uid ?: "",
+                    nombreMascota = nombreMascota,
+                    fechaPerdida = fechaPerdida?.let { Timestamp(it / 1000, 0) } ?: Timestamp.now(),
+                    ubicacion = ubicacion,
+                    fotoUrl = fotoUrl,
+                    encontrado = encontrado,
+                    contacto = contacto
+                )
+                onSave(nuevaMascota)
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Añadir Mascota Perdida") },
+        text = {
+            Column {
+                TextField(
+                    value = nombreMascota,
+                    onValueChange = { nombreMascota = it },
+                    label = { Text("Nombre de la Mascota") }
+                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha de Pérdida")
+                }
+                Text(
+                    "Fecha seleccionada: ${
+                        fechaPerdida?.let {
+                            SimpleDateFormat(
+                                "dd/MM/yyyy",
+                                Locale.getDefault()
+                            ).format(it)
+                        } ?: "No seleccionada"
+                    }")
+                Text("Ubicación inicial: ${ubicacion.latitude}, ${ubicacion.longitude}")
+                TextField(
+                    value = fotoUrl,
+                    onValueChange = { fotoUrl = it },
+                    label = { Text("URL de la Foto") }
+                )
+                TextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Contacto (Teléfono o Email)") }
+                )
+            }
+        }
+    )
+}
+
+//Dialogo para editar mascota perdida
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditLostPetDialog(
+    mascota: MascotaPerdida,
+    onDismiss: () -> Unit,
+    onSave: (MascotaPerdida) -> Unit
+) {
+    var nombreMascota by remember { mutableStateOf(mascota.nombreMascota) }
+    var fechaPerdida by remember { mutableStateOf(mascota.fechaPerdida.toDate().time) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var ubicacion by remember { mutableStateOf(mascota.ubicacion) } // Ubicación inicial del anuncio
+    var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
+    var contacto by remember { mutableStateOf(mascota.contacto) }
+    var showMapDialog by remember { mutableStateOf(false) } // Estado para mostrar el diálogo del mapa
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaPerdida)
+        val confirmEnabled =
+            remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        fechaPerdida = datePickerState.selectedDateMillis ?: fechaPerdida
+                        showDatePicker = false
+                    },
+                    enabled = confirmEnabled.value
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showMapDialog) {
+        MapDialog2(
+            initialLocation = ubicacion,
+            onDismiss = { showMapDialog = false },
+            onLocationSelected = { selectedLocation ->
+                ubicacion = selectedLocation
+                showMapDialog = false
+            }
+        )
+    }
+
+    AlertDialog(
+        modifier = Modifier.fillMaxWidth(),
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val updatedMascota = mascota.copy(
+                    nombreMascota = nombreMascota,
+                    fechaPerdida = Timestamp(fechaPerdida / 1000, 0),
+                    ubicacion = ubicacion,
+                    fotoUrl = fotoUrl,
+                    contacto = contacto
+                )
+                onSave(updatedMascota)
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Editar Mascota Perdida") },
+        text = {
+            Column {
+                TextField(
+                    value = nombreMascota,
+                    onValueChange = { nombreMascota = it },
+                    label = { Text("Nombre de la Mascota") }
+                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha de Pérdida")
+                }
+                Text(
+                    "Fecha seleccionada: ${
+                        SimpleDateFormat(
+                            "dd/MM/yyyy",
+                            Locale.getDefault()
+                        ).format(fechaPerdida)
+                    }"
+                )
+                Button(onClick = { showMapDialog = true }) {
+                    Text("Seleccionar Ubicación en el Mapa")
+                }
+                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
+                TextField(
+                    value = fotoUrl,
+                    onValueChange = { fotoUrl = it },
+                    label = { Text("URL de la Foto") }
+                )
+                TextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Contacto (Teléfono o Email)") }
+                )
+            }
+        }
+    )
+}
+
+//Dialogo para seleccionar ubicacion en el mapa
+@Composable
+fun MapDialog2(
+    initialLocation: GeoPoint,
+    onDismiss: () -> Unit,
+    onLocationSelected: (GeoPoint) -> Unit
+) {
+    var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                if (selectedLocation == null) {
+                    // Mostrar el Toast directamente en el evento onClick
+                    Toast.makeText(
+                        context,
+                        "Por favor selecciona una ubicación",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    onLocationSelected(selectedLocation!!)
+                }
+            }) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Atrás")
+            }
+        },
+        title = { Text("Seleccionar Ubicación") },
+        text = {
+            AndroidView(
+                factory = { context ->
+                    MapView(context).apply {
+                        onCreate(null)
+                        getMapAsync { googleMap ->
+                            val initialLatLng =
+                                LatLng(initialLocation.latitude, initialLocation.longitude)
+                            googleMap.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    initialLatLng,
+                                    12f
+                                )
+                            )
+                            googleMap.setOnMapClickListener { latLng ->
+                                selectedLocation = GeoPoint(latLng.latitude, latLng.longitude)
+                                googleMap.clear()
+                                googleMap.addMarker(MarkerOptions().position(latLng))
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            )
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddEventDialog(
+    onDismiss: () -> Unit,
+    onSave: (Evento) -> Unit
+) {
+    var titulo by remember { mutableStateOf("") }
+    var descripcion by remember { mutableStateOf("") }
+    var ubicacion by remember {
+        mutableStateOf(
+            GeoPoint(
+                41.3879,
+                2.16992
+            )
+        )
+    } // Barcelona por defecto
+    var fecha by remember { mutableStateOf<Long?>(null) }
+    var tipo by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showDescriptionDialog by remember { mutableStateOf(false) }
+    var showMapDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    fecha = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showMapDialog) {
+        MapDialog(
+            initialLocation = ubicacion,
+            onDismiss = { showMapDialog = false },
+            onLocationSelected = { selectedLocation ->
+                ubicacion = selectedLocation
+                showMapDialog = false
+            }
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
+                    val nuevoEvento = Evento(
+                        titulo = titulo,
+                        descripcion = descripcion,
+                        ubicacion = ubicacion,
+                        fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
+                        maxParticipantes = 15,
+                        tipo = tipo,
+                        creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
+                    )
+                    onSave(nuevoEvento)
+                }
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Añadir Evento") },
+        text = {
+            Column {
+                TextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título") }
+                )
+                TextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.clickable { showDescriptionDialog = true }
+                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha")
+                }
+                Text(
+                    "Fecha seleccionada: ${
+                        fecha?.let {
+                            SimpleDateFormat(
+                                "dd/MM/yyyy",
+                                Locale.getDefault()
+                            ).format(it)
+                        } ?: "No seleccionada"
+                    }")
+                TextField(
+                    value = tipo,
+                    onValueChange = { tipo = it },
+                    label = { Text("Tipo de Evento") }
+                )
+                Button(onClick = { showMapDialog = true }) {
+                    Text("Seleccionar Ubicación en el Mapa")
+                }
+                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
+            }
+        }
+    )
+
+    if (showDescriptionDialog) {
+        LongDescriptionDialog(
+            initialText = descripcion,
+            onDismiss = { showDescriptionDialog = false },
+            onSave = {
+                descripcion = it
+                showDescriptionDialog = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditEventDialog(
+    evento: Evento,
+    onDismiss: () -> Unit,
+    onSave: (Evento) -> Unit
+) {
+    var titulo by remember { mutableStateOf(evento.titulo) }
+    var descripcion by remember { mutableStateOf(evento.descripcion) }
+    var ubicacion by remember { mutableStateOf(evento.ubicacion) }
+    var fecha by remember { mutableStateOf<Long?>(evento.fecha.toDate().time) }
+    var tipo by remember { mutableStateOf(evento.tipo) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showDescriptionDialog by remember { mutableStateOf(false) }
+    var showMapDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fecha)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    fecha = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showMapDialog) {
+        MapDialog(
+            initialLocation = ubicacion,
+            onDismiss = { showMapDialog = false },
+            onLocationSelected = { selectedLocation ->
+                ubicacion = selectedLocation
+                showMapDialog = false
+            }
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
+                    val nuevoEvento = Evento(
+                        titulo = titulo,
+                        descripcion = descripcion,
+                        ubicacion = ubicacion,
+                        fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
+                        maxParticipantes = 15,
+                        tipo = tipo,
+                        creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
+                    )
+                    onSave(nuevoEvento)
+                }
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Editar Evento") },
+        text = {
+            Column {
+                TextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título") }
+                )
+                TextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.clickable { showDescriptionDialog = true }
+                )
+                Button(onClick = { showDatePicker = true }) {
+                    Text("Seleccionar Fecha")
+                }
+                Text(
+                    "Fecha seleccionada: ${
+                        fecha?.let {
+                            SimpleDateFormat(
+                                "dd/MM/yyyy",
+                                Locale.getDefault()
+                            ).format(it)
+                        } ?: "No seleccionada"
+                    }")
+                TextField(
+                    value = tipo,
+                    onValueChange = { tipo = it },
+                    label = { Text("Tipo de Evento") }
+                )
+                Button(onClick = { showMapDialog = true }) {
+                    Text("Seleccionar Ubicación en el Mapa")
+                }
+                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
+            }
+        }
+    )
+
+    if (showDescriptionDialog) {
+        LongDescriptionDialog(
+            initialText = descripcion,
+            onDismiss = { showDescriptionDialog = false },
+            onSave = {
+                descripcion = it
+                showDescriptionDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun LongDescriptionDialog(
+    initialText: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(initialText) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onSave(text) }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Editar Descripción") },
+        text = {
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.height(200.dp),
+                label = { Text("Descripción") },
+                maxLines = 10
+            )
+        }
+    )
+}
+
+@Composable
+fun InfoEventDialog(
+    evento: Evento,
+    onDismiss: () -> Unit
+) {
+    var showLocationDialog by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        },
+        title = { Text("Información del Evento") },
+        text = {
+            Column {
+                Text("Título: ${evento.titulo}", fontWeight = FontWeight.Bold)
+                Text("Descripción: ${evento.descripcion}")
+                Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                Button(
+                    onClick = { showLocationDialog = true },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Ver Ubicación")
+                }
+                Text(
+                    "Fecha: ${
+                        SimpleDateFormat(
+                            "dd/MM/yyyy",
+                            Locale.getDefault()
+                        ).format(evento.fecha.toDate())
+                    }"
+                )
+                Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
+                Text("Tipo: ${evento.tipo}")
+            }
+        }
+    )
+
+    if (showLocationDialog) {
+        LocationDialog(
+            location = evento.ubicacion,
+            onDismiss = { showLocationDialog = false }
+        )
+    }
+}
+
+@Composable
+fun LocationDialog(
+    location: GeoPoint,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Atrás")
+            }
+        },
+        title = { Text("Ubicación del Evento") },
+        text = {
+            Column {
+                Text("Latitud: ${location.latitude}")
+                Text("Longitud: ${location.longitude}")
+                Spacer(modifier = Modifier.height(16.dp))
+                AndroidView(
+                    factory = { context ->
+                        MapView(context).apply {
+                            onCreate(null)
+                            getMapAsync { googleMap ->
+                                val eventLocation = LatLng(location.latitude, location.longitude)
+                                googleMap.moveCamera(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        eventLocation,
+                                        15f
+                                    )
+                                )
+                                googleMap.addMarker(
+                                    MarkerOptions().position(eventLocation)
+                                        .title("Ubicación del Evento")
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun MapDialog(
+    initialLocation: GeoPoint,
+    onDismiss: () -> Unit,
+    onLocationSelected: (GeoPoint) -> Unit
+) {
+    var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                if (selectedLocation == null) {
+                    Toast.makeText(
+                        context,
+                        "Por favor selecciona un punto en el mapa",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    onLocationSelected(selectedLocation!!)
+                }
+            }) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Atrás")
+            }
+        },
+        title = { Text("Seleccionar Ubicación") },
+        text = {
+            AndroidView(
+                factory = { context ->
+                    MapView(context).apply {
+                        onCreate(null)
+                        getMapAsync { googleMap ->
+                            val initialLatLng =
+                                LatLng(initialLocation.latitude, initialLocation.longitude)
+                            googleMap.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    initialLatLng,
+                                    12f
+                                )
+                            )
+                            googleMap.setOnMapClickListener { latLng ->
+                                selectedLocation = GeoPoint(latLng.latitude, latLng.longitude)
+                                googleMap.clear()
+                                googleMap.addMarker(MarkerOptions().position(latLng))
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            )
+        }
+    )
+}
+
+@Composable
+fun EventMapDialog(
+    eventos: List<Evento>,
+    onDismiss: () -> Unit
+) {
+    var mapView: MapView? = null
+    var selectedMarkerTitle by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                mapView?.onPause()
+                mapView?.onDestroy()
+                onDismiss()
+            }) {
+                Text("Cerrar")
+            }
+        },
+        title = { Text("Eventos en el Mapa") },
+        text = {
+            Column {
+                AndroidView(
+                    factory = { context ->
+                        MapView(context).apply {
+                            onCreate(null)
+                            getMapAsync { googleMap ->
+                                googleMap.uiSettings.isZoomControlsEnabled = true
+
+                                eventos.forEach { evento ->
+                                    val location = LatLng(
+                                        evento.ubicacion.latitude,
+                                        evento.ubicacion.longitude
+                                    )
+                                    val markerTitle = evento.titulo.ifEmpty { "Evento sin título" }
+                                    val marker = googleMap.addMarker(
+                                        MarkerOptions()
+                                            .position(location)
+                                            .title(markerTitle)
+                                    )
+
+                                    googleMap.setOnMarkerClickListener { clickedMarker ->
+                                        if (clickedMarker == marker) {
+                                            selectedMarkerTitle = markerTitle
+                                        } else {
+                                            selectedMarkerTitle = null
+                                        }
+                                        false
+                                    }
+                                }
+
+                                if (eventos.isNotEmpty()) {
+                                    val firstLocation = LatLng(
+                                        eventos[0].ubicacion.latitude,
+                                        eventos[0].ubicacion.longitude
+                                    )
+                                    googleMap.moveCamera(
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            firstLocation,
+                                            10f
+                                        )
+                                    )
+                                }
+                            }
+                            mapView = this
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp),
+                    update = { it.onResume() }
+                )
+                selectedMarkerTitle?.let { title ->
+                    Text(
+                        text = "Evento seleccionado: $title",
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    )
 }
