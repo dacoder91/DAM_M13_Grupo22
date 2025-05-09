@@ -1,46 +1,30 @@
 package com.example.doggo2.ui.screens
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import com.example.doggo2.R
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.app.ActivityCompat
-import com.example.doggo2.BuildConfig
-import com.google.android.gms.fitness.data.Field
+import com.example.doggo2.controller.createMapView
+import com.example.doggo2.controller.searchPlaces
+import com.example.doggo2.controller.setupMap
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.places.Place
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 
 @Composable
 fun MapaScreen(
@@ -139,10 +123,9 @@ fun MapaScreen(
 }
 
 
-
 //Funcion para crear el botón de filtro
 @Composable
-private fun FilterButton(
+fun FilterButton(
     label: String,
     onClick: () -> Unit
 ) {
@@ -158,128 +141,3 @@ private fun FilterButton(
     }
 }
 
-// Funcion para crear el MapView
-private fun createMapView(
-    context: Context,
-    onMapReady: (GoogleMap) -> Unit
-): MapView {
-    return MapView(context).apply {
-        onCreate(null)
-        getMapAsync { map -> onMapReady(map) }
-    }
-}
-
-// Funcion para configurar el mapa
-private fun setupMap(
-    context: Context,
-    map: GoogleMap,
-    fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient
-) {
-    try {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            map.isMyLocationEnabled = true
-
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    val currentLocation = LatLng(location.latitude, location.longitude)
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15f))
-                    map.addMarker(
-                        MarkerOptions()
-                            .position(currentLocation)
-                            .title("Ubicación Actual")
-                    )
-                } else {
-                    android.util.Log.e("MapaScreen", "No se pudo obtener la ubicación actual.")
-                }
-            }.addOnFailureListener { exception ->
-                android.util.Log.e("MapaScreen", "Error al obtener la ubicación: ${exception.message}")
-            }
-        } else {
-            ActivityCompat.requestPermissions(
-                (context as android.app.Activity),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                1
-            )
-        }
-    } catch (e: Exception) {
-        android.util.Log.e("MapaScreen", "Error al configurar el mapa: ${e.message}")
-    }
-}
-
-// Funcionn para validar la clave de la API
-private fun validateApiKey(): Boolean {
-    if (BuildConfig.MAPS_API_KEY.isNullOrEmpty()) {
-        android.util.Log.e("MapaScreen", "La clave de la API no está configurada.")
-        return false
-    }
-    return true
-}
-
-// Funcion para verificar la conectividad de red
-private fun isNetworkAvailable(context: Context): Boolean {
-    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-    val networkInfo = connectivityManager.activeNetworkInfo
-    return networkInfo != null && networkInfo.isConnected
-}
-
-// Funciion para buscar lugares
-private fun searchPlaces(
-    context: Context,
-    googleMap: GoogleMap?,
-    keyword: String
-) {
-    if (googleMap == null) {
-        android.util.Log.e("MapaScreen", "googleMap es nulo")
-        return
-    }
-
-    if (!validateApiKey() || !isNetworkAvailable(context)) {
-        android.util.Log.e("MapaScreen", "No se puede realizar la búsqueda: clave de API inválida o sin conexión.")
-        return
-    }
-
-    try {
-        val currentLocation = googleMap.cameraPosition.target
-        val apiKey = BuildConfig.MAPS_API_KEY
-        val url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
-                "?location=${currentLocation.latitude},${currentLocation.longitude}" +
-                "&radius=5000" +
-                "&keyword=$keyword" +
-                "&key=$apiKey"
-
-        val requestQueue = com.android.volley.toolbox.Volley.newRequestQueue(context)
-        val stringRequest = com.android.volley.toolbox.StringRequest(
-            com.android.volley.Request.Method.GET, url,
-            { response ->
-                try {
-                    val jsonObject = org.json.JSONObject(response)
-                    val results = jsonObject.getJSONArray("results")
-                    googleMap.clear()
-                    for (i in 0 until results.length()) {
-                        val place = results.getJSONObject(i)
-                        val lat = place.getJSONObject("geometry").getJSONObject("location").getDouble("lat")
-                        val lng = place.getJSONObject("geometry").getJSONObject("location").getDouble("lng")
-                        val name = place.getString("name")
-                        googleMap.addMarker(
-                            MarkerOptions()
-                                .position(LatLng(lat, lng))
-                                .title(name)
-                        )
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("MapaScreen", "Error al procesar la respuesta: ${e.message}")
-                }
-            },
-            { error ->
-                android.util.Log.e("MapaScreen", "Error en la solicitud: ${error.message}")
-            }
-        )
-        requestQueue.add(stringRequest)
-    } catch (e: Exception) {
-        android.util.Log.e("MapaScreen", "Error al buscar lugares: ${e.message}")
-    }
-}

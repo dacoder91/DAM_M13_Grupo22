@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.*
@@ -18,13 +17,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.doggo2.R
+import com.example.doggo2.controller.ActionButton
 import com.example.doggo2.models.Usuario
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -149,28 +148,3 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun ActionButton(
-    text: String,
-    iconRes: Int,
-    bgColor: Color,
-    textStyle: TextStyle,
-    modifier: Modifier,
-    shape: RoundedCornerShape,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(containerColor = bgColor),
-        shape = shape
-    ) {
-        Text(text, style = textStyle)
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = null,
-            tint = Color.White
-        )
-    }
-}

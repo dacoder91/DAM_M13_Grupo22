@@ -17,25 +17,30 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        auth = Firebase.auth
 
-        // Inicializar la API de Google Places
-        try {
-            if (!Places.isInitialized()) {
-                // Inicializa la API de Google Places con tu clave de API
-                // Hay que asegurarse de que la clave de API esté configurada en el archivo strings.xml
-                val apiKey = getString(R.string.maps_api_key)
-                Places.initialize(applicationContext, apiKey)
-            }
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error al inicializar Google Places API: ${e.message}", e)
-        }
+        initializeFirebaseAuth()
+        initializeGooglePlaces()
 
         setContent {
             PetCommunityTheme {
                 val navController = rememberNavController()
                 AppNavigation(navController = navController)
             }
+        }
+    }
+
+    private fun initializeFirebaseAuth() {
+        auth = Firebase.auth
+    }
+
+    private fun initializeGooglePlaces() {
+        try {
+            if (!Places.isInitialized()) {
+                val apiKey = getString(R.string.maps_api_key)
+                Places.initialize(applicationContext, apiKey)
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error al inicializar Google Places API: ${e.message}", e)
         }
     }
 }
