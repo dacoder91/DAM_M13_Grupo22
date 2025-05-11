@@ -34,6 +34,8 @@ import com.google.firebase.firestore.GeoPoint
 import org.json.JSONObject
 import java.util.Calendar
 import java.util.Date
+import android.location.Geocoder
+import java.util.Locale
 
 // Función para calcular la edad
 fun calculateAge(birthDate: Date): Int {
@@ -282,4 +284,17 @@ fun enviarMensaje(eventoId: String, senderId: String, texto: String) {
 }
 
 
-//
+// Funcion para obtener la ciudad a partir de un GeoPoint
+fun getCityFromGeoPoint(context: Context, geoPoint: GeoPoint): String {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(geoPoint.latitude, geoPoint.longitude, 1)
+        if (!addresses.isNullOrEmpty()) {
+            addresses[0].locality ?: "Ciudad desconocida"
+        } else {
+            "Ciudad desconocida"
+        }
+    } catch (e: Exception) {
+        "Error al obtener ciudad"
+    }
+}

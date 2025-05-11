@@ -55,6 +55,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.models.Mascota
 import com.example.doggo2.controller.calculateAge
 import com.example.doggo2.controller.enviarMensaje
+import com.example.doggo2.controller.getCityFromGeoPoint
 import com.example.doggo2.controller.validarCamposEvento
 import com.example.doggo2.models.MascotaPerdida
 import com.example.doggo2.models.Usuario
@@ -72,6 +73,7 @@ import com.google.firebase.firestore.GeoPoint
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.doggo2.controller.createMapView
 
 // Diálogo para editar la información del perfil del usuario.
 // Permite modificar el nombre, email y teléfono del usuario.
@@ -1008,6 +1010,7 @@ fun InfoEventDialog(
     onDismiss: () -> Unit
 ) {
     var showLocationDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1021,7 +1024,7 @@ fun InfoEventDialog(
             Column {
                 Text("Título: ${evento.titulo}", fontWeight = FontWeight.Bold)
                 Text("Descripción: ${evento.descripcion}")
-                Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                Text("Ubicación: ${getCityFromGeoPoint(context, evento.ubicacion)}")
                 Button(
                     onClick = { showLocationDialog = true },
                     modifier = Modifier.padding(top = 8.dp)
@@ -1056,10 +1059,20 @@ fun LocationDialog(
     location: GeoPoint,
     onDismiss: () -> Unit
 ) {
+    var mapView: MapView? = null
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            mapView?.onPause()
+            mapView?.onDestroy()
+            onDismiss()
+        },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = {
+                mapView?.onPause()
+                mapView?.onDestroy()
+                onDismiss()
+            }) {
                 Text("Atrás")
             }
         },
@@ -1073,24 +1086,26 @@ fun LocationDialog(
                     factory = { context ->
                         MapView(context).apply {
                             onCreate(null)
+                            onResume()
                             getMapAsync { googleMap ->
                                 val eventLocation = LatLng(location.latitude, location.longitude)
+                                googleMap.uiSettings.isZoomControlsEnabled = true
                                 googleMap.moveCamera(
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        eventLocation,
-                                        15f
-                                    )
+                                    CameraUpdateFactory.newLatLngZoom(eventLocation, 15f)
                                 )
                                 googleMap.addMarker(
-                                    MarkerOptions().position(eventLocation)
+                                    MarkerOptions()
+                                        .position(eventLocation)
                                         .title("Ubicación del Evento")
                                 )
                             }
+                            mapView = this
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
+                        .height(300.dp),
+                    update = { it.onResume() }
                 )
             }
         }

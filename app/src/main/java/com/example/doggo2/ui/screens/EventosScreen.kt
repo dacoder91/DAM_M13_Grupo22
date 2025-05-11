@@ -33,6 +33,8 @@ import com.example.doggo2.ui.screens.ui.theme.YellowPeach
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.text.style.TextAlign
+import com.example.doggo2.controller.getCityFromGeoPoint
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun EventosScreen(
@@ -41,6 +43,7 @@ fun EventosScreen(
 ) {
     val db = FirebaseFirestore.getInstance()
     val currentUser = Firebase.auth.currentUser
+    val context = LocalContext.current
 
     var eventos by remember { mutableStateOf<List<Evento>>(emptyList()) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -182,7 +185,7 @@ fun EventosScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("Título: ${evento.titulo}", fontSize = 18.sp)
                                         Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
-                                        Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                                        Text("Ubicación: ${getCityFromGeoPoint(context, evento.ubicacion)}")
                                         Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
                                     }
 
@@ -422,7 +425,7 @@ fun EventosScreen(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text("Título: ${evento.titulo}", fontSize = 18.sp)
                                             Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
-                                            Text("Ubicación: ${evento.ubicacion.latitude}, ${evento.ubicacion.longitude}")
+                                            Text("Ubicación: ${getCityFromGeoPoint(context, evento.ubicacion)}")
                                             Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
                                         }
 
