@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo2.R
+import com.example.doggo2.controller.getCityFromGeoPoint
 import com.example.doggo2.models.MascotaPerdida
 import com.example.doggo2.ui.screens.ui.theme.YellowPeach
 import com.google.firebase.Firebase
@@ -68,6 +69,7 @@ fun MascotasPerdidasScreen(
 ) {
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
+
     var mascotasPerdidas by remember { mutableStateOf<List<MascotaPerdida>>(emptyList()) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -204,7 +206,7 @@ fun MascotasPerdidasScreen(
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text("Nombre: ${mascota.nombreMascota}")
                                 Text("Fecha publicación: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(mascota.fechaPerdida.toDate())}")
-                                Text("Ubicación: ${mascota.ubicacion.latitude}, ${mascota.ubicacion.longitude}")
+                                Text("Ubicación: ${getCityFromGeoPoint(context, mascota.ubicacion)}")
                                 Text("Contacto: ${mascota.contacto}")
 
                                 Spacer(modifier = Modifier.height(8.dp))
