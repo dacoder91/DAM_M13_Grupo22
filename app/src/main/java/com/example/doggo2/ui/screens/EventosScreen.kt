@@ -263,8 +263,16 @@ fun EventosScreen(
 
                                         Button(
                                             onClick = {
-                                                selectedEvento = evento
-                                                showChatDialog = true
+                                                if (evento.participantes.contains(currentUser?.uid)) {
+                                                    selectedEvento = evento
+                                                    showChatDialog = true
+                                                } else {
+                                                    Toast.makeText(
+                                                        navController.context,
+                                                        "Chat solo disponible para usuarios unidos al evento",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
                                             },
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Color(0xFF9C27B0),

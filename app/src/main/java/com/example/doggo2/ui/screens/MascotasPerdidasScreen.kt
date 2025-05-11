@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -75,6 +76,7 @@ fun MascotasPerdidasScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedMascota by remember { mutableStateOf<MascotaPerdida?>(null) }
     var mostrarEncontradas by remember { mutableStateOf(false) }
+    var showMapDialog by remember { mutableStateOf(false) }
 
     // Escuchar cambios en la colección de mascotas perdidas
     LaunchedEffect(mostrarEncontradas) {
@@ -247,6 +249,21 @@ fun MascotasPerdidasScreen(
                                             Text("¿Encontrado?")
                                         }
                                     }
+
+                                    // Botón para ver ubicación en el mapa
+                                    Button(
+                                        onClick = {
+                                            selectedMascota = mascota
+                                            showMapDialog = true
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text("Mapa")
+                                    }
                                 }
                             }
                         }
@@ -300,6 +317,14 @@ fun MascotasPerdidasScreen(
                         showEditDialog = false
                     }
             }
+        )
+    }
+    // Diálogo para mostrar la ubicación en el mapa
+    if (showMapDialog && selectedMascota != null) {
+        MapDialog2(
+            initialLocation = selectedMascota!!.ubicacion,
+            onDismiss = { showMapDialog = false },
+            onLocationSelected = { /* No se necesita acción aquí */ }
         )
     }
 }
