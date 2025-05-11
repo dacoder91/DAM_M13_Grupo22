@@ -700,6 +700,7 @@ fun MapDialog2(
     )
 }
 
+//Dialogo para añadir evento
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEventDialog(
@@ -715,7 +716,7 @@ fun AddEventDialog(
                 2.16992
             )
         )
-    } // Barcelona por defecto
+    }
     var fecha by remember { mutableStateOf<Long?>(null) }
     var tipo by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }

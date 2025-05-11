@@ -105,23 +105,14 @@ fun MascotasPerdidasScreen(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Fila superior con checkbox y botón de salir
+            // Fila superior con botón de salir
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Checkbox para mostrar encontradas
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = mostrarEncontradas,
-                        onCheckedChange = { mostrarEncontradas = it }
-                    )
-                    Text("Mostrar encontradas")
-                }
-
                 // Botón Salir
                 Button(
                     onClick = {
@@ -155,6 +146,18 @@ fun MascotasPerdidasScreen(
                     style = TextStyle(fontFamily = YellowPeach, fontSize = 28.sp),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+
+                // Checkbox para mostrar encontradas
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Checkbox(
+                        checked = mostrarEncontradas,
+                        onCheckedChange = { mostrarEncontradas = it }
+                    )
+                    Text("Mostrar encontradas")
+                }
 
                 //lazycolumn para mostrar las mascotas perdidas
                 LazyColumn(
