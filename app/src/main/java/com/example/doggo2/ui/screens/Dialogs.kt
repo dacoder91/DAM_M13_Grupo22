@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,22 +13,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,6 +54,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.models.Mascota
 import com.example.doggo2.controller.calculateAge
+import com.example.doggo2.controller.enviarMensaje
 import com.example.doggo2.controller.validarCamposEvento
 import com.example.doggo2.models.MascotaPerdida
 import com.example.doggo2.models.Usuario
@@ -53,6 +66,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import java.text.SimpleDateFormat
@@ -220,7 +234,7 @@ fun AddPetDialog(
     )
 }
 
-// Modifica el EditPetDialog:
+// Dialogo para editar la información de una mascota existente.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditPetDialog(
@@ -564,106 +578,64 @@ fun EditLostPetDialog(
 ) {
     var nombreMascota by remember { mutableStateOf(mascota.nombreMascota) }
     var fechaPerdida by remember { mutableStateOf(mascota.fechaPerdida.toDate().time) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var ubicacion by remember { mutableStateOf(mascota.ubicacion) } // Ubicación inicial del anuncio
     var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
     var contacto by remember { mutableStateOf(mascota.contacto) }
-    var showMapDialog by remember { mutableStateOf(false) } // Estado para mostrar el diálogo del mapa
-
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaPerdida)
-        val confirmEnabled =
-            remember { derivedStateOf { datePickerState.selectedDateMillis != null } }
-
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        fechaPerdida = datePickerState.selectedDateMillis ?: fechaPerdida
-                        showDatePicker = false
-                    },
-                    enabled = confirmEnabled.value
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    if (showMapDialog) {
-        MapDialog2(
-            initialLocation = ubicacion,
-            onDismiss = { showMapDialog = false },
-            onLocationSelected = { selectedLocation ->
-                ubicacion = selectedLocation
-                showMapDialog = false
-            }
-        )
-    }
+    val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
 
     AlertDialog(
-        modifier = Modifier.fillMaxWidth(),
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                val updatedMascota = mascota.copy(
-                    nombreMascota = nombreMascota,
-                    fechaPerdida = Timestamp(fechaPerdida / 1000, 0),
-                    ubicacion = ubicacion,
-                    fotoUrl = fotoUrl,
-                    contacto = contacto
-                )
-                onSave(updatedMascota)
-            }) {
-                Text("Guardar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        },
         title = { Text("Editar Mascota Perdida") },
         text = {
             Column {
-                TextField(
+                OutlinedTextField(
                     value = nombreMascota,
                     onValueChange = { nombreMascota = it },
                     label = { Text("Nombre de la Mascota") }
                 )
-                Button(onClick = { showDatePicker = true }) {
-                    Text("Seleccionar Fecha de Pérdida")
-                }
-                Text(
-                    "Fecha seleccionada: ${
-                        SimpleDateFormat(
-                            "dd/MM/yyyy",
-                            Locale.getDefault()
-                        ).format(fechaPerdida)
-                    }"
+                OutlinedTextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Contacto") }
                 )
-                Button(onClick = { showMapDialog = true }) {
-                    Text("Seleccionar Ubicación en el Mapa")
-                }
-                Text("Ubicación seleccionada: ${ubicacion.latitude}, ${ubicacion.longitude}")
-                TextField(
+                OutlinedTextField(
                     value = fotoUrl,
                     onValueChange = { fotoUrl = it },
                     label = { Text("URL de la Foto") }
                 )
-                TextField(
-                    value = contacto,
-                    onValueChange = { contacto = it },
-                    label = { Text("Contacto (Teléfono o Email)") }
-                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botones de editar y eliminar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = {
+                        db.collection("mascotasPerdidas").document(mascota.id).delete()
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Mascota eliminada", Toast.LENGTH_SHORT).show()
+                                onDismiss()
+                            }
+                    }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                    }
+
+                    IconButton(onClick = {
+                        val updatedMascota = mascota.copy(
+                            nombreMascota = nombreMascota,
+                            contacto = contacto,
+                            fotoUrl = fotoUrl
+                        )
+                        onSave(updatedMascota)
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Guardar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
             }
         }
     )
@@ -684,12 +656,7 @@ fun MapDialog2(
         confirmButton = {
             TextButton(onClick = {
                 if (selectedLocation == null) {
-                    // Mostrar el Toast directamente en el evento onClick
-                    Toast.makeText(
-                        context,
-                        "Por favor selecciona una ubicación",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(context, "Por favor selecciona una ubicación", Toast.LENGTH_SHORT).show()
                 } else {
                     onLocationSelected(selectedLocation!!)
                 }
@@ -708,15 +675,10 @@ fun MapDialog2(
                 factory = { context ->
                     MapView(context).apply {
                         onCreate(null)
+                        onResume() // Asegúrate de llamar a onResume
                         getMapAsync { googleMap ->
-                            val initialLatLng =
-                                LatLng(initialLocation.latitude, initialLocation.longitude)
-                            googleMap.moveCamera(
-                                CameraUpdateFactory.newLatLngZoom(
-                                    initialLatLng,
-                                    12f
-                                )
-                            )
+                            val initialLatLng = LatLng(initialLocation.latitude, initialLocation.longitude)
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLatLng, 12f))
                             googleMap.setOnMapClickListener { latLng ->
                                 selectedLocation = GeoPoint(latLng.latitude, latLng.longitude)
                                 googleMap.clear()
@@ -727,7 +689,10 @@ fun MapDialog2(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(400.dp)
+                    .height(400.dp),
+                update = { mapView ->
+                    mapView.onResume() // Asegúrate de que el mapa se actualice correctamente
+                }
             )
         }
     )
@@ -779,11 +744,11 @@ fun AddEventDialog(
     }
 
     if (showMapDialog) {
-        MapDialog(
-            initialLocation = ubicacion,
+        MapDialog2(
+            initialLocation = ubicacion, // Ubicación inicial
             onDismiss = { showMapDialog = false },
             onLocationSelected = { selectedLocation ->
-                ubicacion = selectedLocation
+                ubicacion = selectedLocation // Actualiza la ubicación seleccionada
                 showMapDialog = false
             }
         )
@@ -793,17 +758,21 @@ fun AddEventDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
-                if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
-                    val nuevoEvento = Evento(
-                        titulo = titulo,
-                        descripcion = descripcion,
-                        ubicacion = ubicacion,
-                        fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
-                        maxParticipantes = 15,
-                        tipo = tipo,
-                        creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
-                    )
-                    onSave(nuevoEvento)
+                try {
+                    if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
+                        val nuevoEvento = Evento(
+                            titulo = titulo,
+                            descripcion = descripcion,
+                            ubicacion = ubicacion,
+                            fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
+                            maxParticipantes = 15,
+                            tipo = tipo,
+                            creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
+                        )
+                        onSave(nuevoEvento)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error al guardar el evento: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }) {
                 Text("Guardar")
@@ -865,6 +834,8 @@ fun AddEventDialog(
     }
 }
 
+
+// Diálogo para editar un evento existente. Permite modificar el título, descripción, ubicación, fecha y tipo del evento.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditEventDialog(
@@ -905,7 +876,7 @@ fun EditEventDialog(
     }
 
     if (showMapDialog) {
-        MapDialog(
+        MapDialog2(
             initialLocation = ubicacion,
             onDismiss = { showMapDialog = false },
             onLocationSelected = { selectedLocation ->
@@ -919,17 +890,21 @@ fun EditEventDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
-                if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
-                    val nuevoEvento = Evento(
-                        titulo = titulo,
-                        descripcion = descripcion,
-                        ubicacion = ubicacion,
-                        fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
-                        maxParticipantes = 15,
-                        tipo = tipo,
-                        creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
-                    )
-                    onSave(nuevoEvento)
+                try {
+                    if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
+                        val nuevoEvento = Evento(
+                            titulo = titulo,
+                            descripcion = descripcion,
+                            ubicacion = ubicacion,
+                            fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
+                            maxParticipantes = 15,
+                            tipo = tipo,
+                            creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
+                        )
+                        onSave(nuevoEvento)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error al editar el evento: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }) {
                 Text("Guardar")
@@ -991,6 +966,8 @@ fun EditEventDialog(
     }
 }
 
+
+// Diálogo para editar la descripción de un evento. Permite modificar el texto de la descripción.
 @Composable
 fun LongDescriptionDialog(
     initialText: String,
@@ -1024,6 +1001,7 @@ fun LongDescriptionDialog(
     )
 }
 
+// Diálogo para mostrar la información de un evento. Muestra el título, descripción, ubicación, fecha y tipo del evento.
 @Composable
 fun InfoEventDialog(
     evento: Evento,
@@ -1072,6 +1050,7 @@ fun InfoEventDialog(
     }
 }
 
+// Diálogo para mostrar la ubicación de un evento en un mapa. Muestra la latitud y longitud del evento y permite ver su ubicación en un mapa.
 @Composable
 fun LocationDialog(
     location: GeoPoint,
@@ -1118,68 +1097,8 @@ fun LocationDialog(
     )
 }
 
-@Composable
-fun MapDialog(
-    initialLocation: GeoPoint,
-    onDismiss: () -> Unit,
-    onLocationSelected: (GeoPoint) -> Unit
-) {
-    var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
-    val context = LocalContext.current
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                if (selectedLocation == null) {
-                    Toast.makeText(
-                        context,
-                        "Por favor selecciona un punto en el mapa",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    onLocationSelected(selectedLocation!!)
-                }
-            }) {
-                Text("Aceptar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Atrás")
-            }
-        },
-        title = { Text("Seleccionar Ubicación") },
-        text = {
-            AndroidView(
-                factory = { context ->
-                    MapView(context).apply {
-                        onCreate(null)
-                        getMapAsync { googleMap ->
-                            val initialLatLng =
-                                LatLng(initialLocation.latitude, initialLocation.longitude)
-                            googleMap.moveCamera(
-                                CameraUpdateFactory.newLatLngZoom(
-                                    initialLatLng,
-                                    12f
-                                )
-                            )
-                            googleMap.setOnMapClickListener { latLng ->
-                                selectedLocation = GeoPoint(latLng.latitude, latLng.longitude)
-                                googleMap.clear()
-                                googleMap.addMarker(MarkerOptions().position(latLng))
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp)
-            )
-        }
-    )
-}
-
+//Diálogo para mostrar un mapa con los eventos disponibles.
+// Permite al usuario ver la ubicación de los eventos en un mapa y seleccionar uno para obtener más información.
 @Composable
 fun EventMapDialog(
     eventos: List<Evento>,
@@ -1262,4 +1181,109 @@ fun EventMapDialog(
             }
         }
     )
+}
+
+
+//Diálogo para mostrar un chat en tiempo real. Permite a los usuarios enviar y recibir mensajes
+// en un evento específico.
+@Composable
+fun ChatDialog(
+    eventoId: String,
+    currentUserId: String,
+    onDismiss: () -> Unit
+) {
+    val db = FirebaseFirestore.getInstance()
+    val mensajes = remember { mutableStateListOf<Map<String, Any>>() }
+    val usuarios = remember { mutableStateMapOf<String, String>() } // Mapa de senderId a nombre
+    var textoMensaje by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) } // Para manejar errores
+
+    // Escuchar mensajes en tiempo real
+    LaunchedEffect(eventoId) {
+        db.collection("Eventos")
+            .document(eventoId)
+            .collection("Chats")
+            .orderBy("timestamp")
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    errorMessage = "Error al cargar mensajes: ${e.message}"
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    mensajes.clear()
+                    mensajes.addAll(snapshot.documents.mapNotNull { it.data })
+
+                    // Cargar nombres de usuarios
+                    snapshot.documents.forEach { document ->
+                        val senderId = document.getString("senderId") ?: return@forEach
+                        if (!usuarios.containsKey(senderId)) {
+                            db.collection("usuarios").document(senderId).get()
+                                .addOnSuccessListener { userDoc ->
+                                    val nombre = userDoc.getString("nombre") ?: "Desconocido"
+                                    usuarios[senderId] = nombre
+                                }
+                                .addOnFailureListener {
+                                    errorMessage = "Error al cargar usuario: ${it.message}"
+                                }
+                        }
+                    }
+                }
+            }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Chat del Evento") },
+        text = {
+            Column {
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(mensajes) { mensaje ->
+                        val senderId = mensaje["senderId"] as? String ?: "Desconocido"
+                        val nombre = usuarios[senderId] ?: "Cargando..."
+                        val texto = mensaje["text"] as? String ?: ""
+                        Text("$nombre: $texto")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    TextField(
+                        value = textoMensaje,
+                        onValueChange = { textoMensaje = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Escribe un mensaje") }
+                    )
+                    Button(onClick = {
+                        if (textoMensaje.isNotBlank()) {
+                            try {
+                                enviarMensaje(eventoId, currentUserId, textoMensaje)
+                                textoMensaje = ""
+                            } catch (e: Exception) {
+                                errorMessage = "Error al enviar mensaje: ${e.message}"
+                            }
+                        }
+                    }) {
+                        Text("Enviar")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+
+    // Mostrar Snackbar para errores
+    errorMessage?.let { message ->
+        Snackbar(
+            action = {
+                TextButton(onClick = { errorMessage = null }) {
+                    Text("Cerrar")
+                }
+            }
+        ) {
+            Text(message)
+        }
+    }
 }

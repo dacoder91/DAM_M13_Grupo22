@@ -29,6 +29,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.auth.ktx.auth
 
+//Función para mostrar la pantalla de inicio
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -38,6 +39,7 @@ fun HomeScreen(
     val db = FirebaseFirestore.getInstance()
     var usuario by remember { mutableStateOf<Usuario?>(null) }
 
+    // Obtener el usuario actual de Firebase Auth
     LaunchedEffect(Unit) {
         val currentUser = auth.currentUser
         if (currentUser != null) {
@@ -129,6 +131,7 @@ fun HomeScreen(
             val buttonShape = RoundedCornerShape(20.dp)
             val textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
 
+            //a continuacion se crean los botones de la pantalla de inicio
             ActionButton("Eventos", R.drawable.iconoeventos, buttonColor, textStyle, buttonModifier, buttonShape) {
                 navController.navigate("eventos")
             }

@@ -74,6 +74,7 @@ fun MascotasPerdidasScreen(
     var selectedMascota by remember { mutableStateOf<MascotaPerdida?>(null) }
     var mostrarEncontradas by remember { mutableStateOf(false) }
 
+    // Escuchar cambios en la colección de mascotas perdidas
     LaunchedEffect(mostrarEncontradas) {
         val query = if (mostrarEncontradas) {
             db.collection("mascotasPerdidas")
@@ -93,6 +94,7 @@ fun MascotasPerdidasScreen(
         }
     }
 
+    // A continuación se define el diseño de la pantalla
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.imagenperroperdido),
@@ -154,6 +156,7 @@ fun MascotasPerdidasScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
+                //lazycolumn para mostrar las mascotas perdidas
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -203,6 +206,7 @@ fun MascotasPerdidasScreen(
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
+                                //esta Row contiene los botones de editar y eliminar
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.Center
@@ -265,6 +269,7 @@ fun MascotasPerdidasScreen(
         }
     }
 
+    // Diálogo para añadir una nueva mascota perdida
     if (showAddDialog) {
         AddLostPetDialog(
             onDismiss = { showAddDialog = false },
@@ -278,6 +283,7 @@ fun MascotasPerdidasScreen(
         )
     }
 
+    // Diálogo para editar una mascota perdida
     if (showEditDialog && selectedMascota != null) {
         EditLostPetDialog(
             mascota = selectedMascota!!,

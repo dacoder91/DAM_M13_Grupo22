@@ -55,6 +55,7 @@ fun ProfileScreen(
     var showEditPetDialog by remember { mutableStateOf(false) }
     var selectedPet by remember { mutableStateOf<Mascota?>(null) }
 
+    // Verifica si el usuario está autenticado
     LaunchedEffect(Unit) {
         val currentUser = auth.currentUser
         if (currentUser == null) {
@@ -84,6 +85,7 @@ fun ProfileScreen(
         }
     }
 
+    // Diálogo para editar el perfil del usuario
     if (showEditDialog && usuario != null) {
         EditProfileDialog(
             usuario = usuario!!,
@@ -95,6 +97,7 @@ fun ProfileScreen(
         )
     }
 
+    // Diálogo para añadir o editar mascotas
     if (showAddPetDialog && usuario != null) {
         AddPetDialog(
             usuarioId = usuario!!.id,
@@ -122,6 +125,7 @@ fun ProfileScreen(
         )
     }
 
+    // Diálogo para editar una mascota existente
     if (showEditPetDialog && selectedPet != null) {
         EditPetDialog(
             mascota = selectedPet!!,

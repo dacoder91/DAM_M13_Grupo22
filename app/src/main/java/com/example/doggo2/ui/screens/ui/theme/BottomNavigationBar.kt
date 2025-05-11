@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.example.doggo2.ui.navigation.BottomNavItem
 
+// Aqui se define la barra de navegación inferior que se mostrará en la pantalla principal de la aplicación.
 @Composable
 fun BottomNavigationBar(navController: NavHostController, currentRoute: String?) {
     NavigationBar {

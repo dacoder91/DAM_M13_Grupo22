@@ -33,8 +33,6 @@ import com.example.doggo2.ui.screens.ui.theme.YellowPeach
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.lazy.items
-
 
 @Composable
 fun EventosScreen(
@@ -44,11 +42,11 @@ fun EventosScreen(
     val db = FirebaseFirestore.getInstance()
     val currentUser = Firebase.auth.currentUser
 
-    // Variables para manejar el estado de los eventos y diálogos
     var eventos by remember { mutableStateOf<List<Evento>>(emptyList()) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var showChatDialog by remember { mutableStateOf(false) }
     var selectedEvento by remember { mutableStateOf<Evento?>(null) }
     var showMyEventsDialog by remember { mutableStateOf(false) }
     var showMapDialog by remember { mutableStateOf(false) }
@@ -72,7 +70,6 @@ fun EventosScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Fondo difuminado
         Image(
             painter = painterResource(id = R.drawable.imageneventos2),
             contentDescription = "Fondo difuminado",
@@ -81,7 +78,6 @@ fun EventosScreen(
             alpha = 0.5f
         )
 
-        // Botón de salir
         Button(
             onClick = {
                 Firebase.auth.signOut()
@@ -123,9 +119,6 @@ fun EventosScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-
-
-            // Botón para mostrar eventos en el mapa
             Button(
                 onClick = { showMapDialog = true },
                 colors = ButtonDefaults.buttonColors(
@@ -148,8 +141,6 @@ fun EventosScreen(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
-
 
             Button(
                 onClick = { showMyEventsDialog = true },
@@ -250,11 +241,11 @@ fun EventosScreen(
                                         Button(
                                             onClick = {
                                                 selectedEvento = evento
-                                                showEditDialog = false // Asegurarse de que no se muestre el diálogo de edición
-                                                showInfoDialog = true // Mostrar el nuevo diálogo informativo
+                                                showEditDialog = false
+                                                showInfoDialog = true
                                             },
                                             colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF2196F3), // Azul
+                                                containerColor = Color(0xFF2196F3),
                                                 contentColor = Color.White
                                             )
                                         ) {
@@ -266,6 +257,19 @@ fun EventosScreen(
                                                 color = Color.Black
                                             )
                                         }
+
+                                        Button(
+                                            onClick = {
+                                                selectedEvento = evento
+                                                showChatDialog = true
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF9C27B0),
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text("Chat")
+                                        }
                                     }
                                 }
 
@@ -276,19 +280,27 @@ fun EventosScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         IconButton(onClick = {
-                                            try {
-                                                db.collection("eventos").document(evento.id).delete()
-                                                    .addOnSuccessListener {
-                                                        Toast.makeText(navController.context, "Evento eliminado", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                    .addOnFailureListener { e ->
-                                                        Toast.makeText(navController.context, "Error al eliminar: ${e.message}", Toast.LENGTH_SHORT).show()
-                                                    }
-                                            } catch (e: Exception) {
-                                                Toast.makeText(navController.context, "Error inesperado: ${e.message}", Toast.LENGTH_SHORT).show()
-                                            }
+                                            selectedEvento = evento
+                                            showEditDialog = true
                                         }) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Editar",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+
+                                        IconButton(onClick = {
+                                            db.collection("eventos").document(evento.id).delete()
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(navController.context, "Evento eliminado", Toast.LENGTH_SHORT).show()
+                                                }
+                                        }) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Eliminar",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
                                         }
                                     }
                                 }
@@ -345,7 +357,6 @@ fun EventosScreen(
         )
     }
 
-
     if (showEditDialog && selectedEvento != null) {
         EditEventDialog(
             evento = selectedEvento!!,
@@ -364,6 +375,14 @@ fun EventosScreen(
         InfoEventDialog(
             evento = selectedEvento!!,
             onDismiss = { showInfoDialog = false }
+        )
+    }
+
+    if (showChatDialog && selectedEvento != null) {
+        ChatDialog(
+            eventoId = selectedEvento!!.id,
+            currentUserId = currentUser?.uid ?: "",
+            onDismiss = { showChatDialog = false }
         )
     }
 
@@ -419,7 +438,7 @@ fun EventosScreen(
                                                                 "Te has salido del evento",
                                                                 Toast.LENGTH_SHORT
                                                             ).show()
-                                                            showMyEventsDialog = false // Solo cierra el diálogo
+                                                            showMyEventsDialog = false
                                                         }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(
@@ -438,7 +457,7 @@ fun EventosScreen(
                                                     showInfoDialog = true
                                                 },
                                                 colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xFF2196F3), // Azul
+                                                    containerColor = Color(0xFF2196F3),
                                                     contentColor = Color.White
                                                 )
                                             ) {
@@ -447,32 +466,46 @@ fun EventosScreen(
                                         }
                                     }
 
-                                    if (evento.creadorId == currentUser?.uid) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.Start,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            IconButton(onClick = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Start,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        IconButton(onClick = {
+                                            selectedEvento = evento
+                                            showMyEventsDialog = false
+                                            showEditDialog = true
+                                        }) {
+                                            Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                        }
+
+                                        IconButton(onClick = {
+                                            db.collection("eventos").document(evento.id).delete()
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(
+                                                        navController.context,
+                                                        "Evento eliminado",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                        }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Button(
+                                            onClick = {
                                                 selectedEvento = evento
                                                 showMyEventsDialog = false
-                                                showEditDialog = true
-                                            }) {
-                                                Icon(Icons.Default.Edit, contentDescription = "Editar")
-                                            }
-
-                                            IconButton(onClick = {
-                                                db.collection("eventos").document(evento.id).delete()
-                                                    .addOnSuccessListener {
-                                                        Toast.makeText(
-                                                            navController.context,
-                                                            "Evento eliminado",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                    }
-                                            }) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
-                                            }
+                                                showChatDialog = true
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text("Chat")
                                         }
                                     }
                                 }
@@ -489,5 +522,3 @@ fun EventosScreen(
         )
     }
 }
-
-

@@ -12,6 +12,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.doggo2.ui.navigation.BottomNavItem
 import com.example.doggo2.ui.screens.ui.theme.BottomNavigationBar
 
+// Función principal que define la pantalla principal de la aplicación
 @Composable
 fun MainScreen(
     navController: NavHostController,
@@ -20,11 +21,14 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Se establece el fondo de la pantalla principal
     Scaffold(
         bottomBar = {
             BottomNavigationBar(navController = navController, currentRoute = currentRoute)
         }
+        // Se establece el contenido de la pantalla principal
     ) { innerPadding ->
+        // Se define la navegación entre las diferentes pantallas de la aplicación
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.Home.route,

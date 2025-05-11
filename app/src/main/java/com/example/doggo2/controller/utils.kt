@@ -28,6 +28,8 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import org.json.JSONObject
 import java.util.Calendar
@@ -116,7 +118,7 @@ fun isNetworkAvailable(context: Context): Boolean {
     return networkInfo != null && networkInfo.isConnected
 }
 
-// Funciin para buscar lugares
+// Funcion para buscar lugares en el mapa de la pantalla de eventos
 fun searchPlaces(
     context: Context,
     googleMap: GoogleMap?,
@@ -214,6 +216,7 @@ fun enviarCorreo(context: Context, userName: String, userEmail: String) {
     queue.add(request)
 }
 
+// Funcion para crear un botón de acción en la pantalla de eventos
 @Composable
 fun ActionButton(
     text: String,
@@ -240,6 +243,7 @@ fun ActionButton(
     }
 }
 
+//Funcion para validar los campos del evento en la pantalla de eventos
 fun validarCamposEvento(
     titulo: String,
     descripcion: String,
@@ -255,3 +259,27 @@ fun validarCamposEvento(
     }
     return true
 }
+
+//Funcion para enviar un mensaje al chat de un evento en la pantalla de eventos
+fun enviarMensaje(eventoId: String, senderId: String, texto: String) {
+    val db = FirebaseFirestore.getInstance()
+    val mensaje = hashMapOf(
+        "senderId" to senderId,
+        "text" to texto,
+        "timestamp" to FieldValue.serverTimestamp()
+    )
+
+    db.collection("Eventos")
+        .document(eventoId)
+        .collection("Chats")
+        .add(mensaje)
+        .addOnSuccessListener {
+            Log.d("Mensaje", "Mensaje enviado correctamente")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Mensaje", "Error al enviar mensaje", e)
+        }
+}
+
+
+//

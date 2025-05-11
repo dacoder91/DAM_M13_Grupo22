@@ -15,7 +15,7 @@ import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 
-
+// Función principal de navegación de la aplicación
 @Composable
 fun AppNavigation(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "login") {
@@ -29,6 +29,7 @@ fun AppNavigation(navController: NavHostController) {
     }
 }
 
+// Definición de los elementos del menú de navegación inferior
 sealed class BottomNavItem(val title: String, val icon: ImageVector, val route: String) {
     object Home : BottomNavItem("Home", Icons.Filled.Home, "home")
     object Eventos : BottomNavItem("Eventos", Icons.Filled.Event, "eventos")

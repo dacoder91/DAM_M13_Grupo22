@@ -25,6 +25,8 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+
+// Esta función representa la pantalla de inicio de sesión de la aplicación.
 @Composable
 fun LoginScreen(navController: NavController) {
     val auth = Firebase.auth
@@ -38,6 +40,7 @@ fun LoginScreen(navController: NavController) {
         return
     }
 
+    // Variables de estado para manejar el inicio de sesión
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -159,11 +162,12 @@ fun LoginScreen(navController: NavController) {
     }
 
 
+    // Diálogo de registro
     if (showRegisterDialog) {
         val context = LocalContext.current // Obtén el contexto aquí
         RegisterDialog(
-            onDismiss = { showRegisterDialog = false },
-            onRegister = { username, email, password ->
+            onDismiss = { showRegisterDialog = false }, // Cierra el diálogo
+            onRegister = { username, email, password -> // Llama a la función de registro
                 scope.launch {
                     isLoading = true
                     try {
@@ -171,7 +175,7 @@ fun LoginScreen(navController: NavController) {
                         val user = auth.currentUser
                         user?.let {
                             val userData = hashMapOf(
-                                "nombre" to username, // Guardar el nombre de usuario
+                                "nombre" to username,
                                 "email" to email,
                                 "mascotas" to listOf<String>(),
                                 "fechaRegistro" to FieldValue.serverTimestamp()
