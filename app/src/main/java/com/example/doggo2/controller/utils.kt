@@ -59,6 +59,24 @@ fun calculateAge(birthDate: Date): Int {
     return age
 }
 
+// Función para validar la fecha de nacimiento/perdida
+fun validarFechaInferiorAHoy(context: Context, fecha: Long?): Boolean {
+    if (fecha == null || fecha > System.currentTimeMillis()) {
+        Toast.makeText(context, "La fecha debe ser inferior a hoy", Toast.LENGTH_SHORT).show()
+        return false
+    }
+    return true
+}
+
+// Función para validar la fecha del evento
+fun validarFechaSuperiorOIgualAHoy(context: Context, fecha: Long?): Boolean {
+    if (fecha == null || fecha < System.currentTimeMillis()) {
+        Toast.makeText(context, "La fecha debe ser igual o superior a hoy", Toast.LENGTH_SHORT).show()
+        return false
+    }
+    return true
+}
+
 // Funcion para crear el MapView
 fun createMapView(
     context: Context,
@@ -306,7 +324,7 @@ fun getCityFromGeoPoint(context: Context, geoPoint: GeoPoint): String {
     }
 }
 
-//para subir imagenes a firebase
+// FUNCIONES PARA SUBIR IMÁGENES A FIREBASE STORAGE
 @Composable
 fun SelectAndUploadPhoto(
     onUploadComplete: (String) -> Unit
@@ -325,6 +343,7 @@ fun SelectAndUploadPhoto(
     }
 }
 
+// Función para subir la foto a Firebase Storage
 fun uploadPhotoToFirebase(imageUri: Uri, onUploadComplete: (String) -> Unit) {
     val storageRef = FirebaseStorage.getInstance().reference
     val fileName = "images/${UUID.randomUUID()}.jpg"

@@ -86,6 +86,8 @@ import java.util.Locale
 import com.example.doggo2.controller.createMapView
 import com.example.doggo2.controller.setupMap
 import com.example.doggo2.controller.uploadPhotoToFirebase
+import com.example.doggo2.controller.validarFechaInferiorAHoy
+import com.example.doggo2.controller.validarFechaSuperiorOIgualAHoy
 
 // Diálogo para editar la información del perfil del usuario.
 // Permite modificar el nombre, email y teléfono del usuario.
@@ -247,17 +249,19 @@ fun AddPetDialog(
         },
         confirmButton = {
             TextButton(onClick = {
+                if (!validarFechaInferiorAHoy(context, fechaNacimiento)) {
+                    return@TextButton
+                }
                 if (nombre.isBlank() || raza.isBlank() || fechaNacimiento == null) {
-                    Toast.makeText(context, "Rellenar todos los campos obligatorios", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
                     return@TextButton
                 }
                 val newPet = Mascota(
-                    id = "",
                     nombre = nombre,
                     raza = raza,
-                    fotoUrl = if (fotoUrl.isNotEmpty()) fotoUrl else "",
-                    usuarioId = usuarioId,
-                    fechaNacimiento = Timestamp(Date(fechaNacimiento!!))
+                    fechaNacimiento = Timestamp(Date(fechaNacimiento!!)),
+                    fotoUrl = fotoUrl,
+                    usuarioId = usuarioId
                 )
                 onSave(newPet)
             }) {
@@ -619,8 +623,11 @@ fun AddLostPetDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                if (nombreMascota.isBlank() || fechaPerdida == null || fotoUrl.isBlank() || contacto.isBlank()) {
-                    Toast.makeText(context, "Rellenar todos los campos", Toast.LENGTH_SHORT).show()
+                if (!validarFechaInferiorAHoy(context, fechaPerdida)) {
+                    return@TextButton
+                }
+                if (nombreMascota.isBlank() || fotoUrl.isBlank() || contacto.isBlank()) {
+                    Toast.makeText(context, "Debe de rellenar todos los campos", Toast.LENGTH_SHORT).show()
                     return@TextButton
                 }
                 val nuevaMascota = MascotaPerdida(
@@ -880,19 +887,24 @@ fun AddEventDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
+                if (titulo.isBlank() || descripcion.isBlank() || fecha == null || tipo.isBlank()) {
+                    Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
+                    return@TextButton
+                }
+                if (!validarFechaSuperiorOIgualAHoy(context, fecha)) {
+                    return@TextButton
+                }
                 try {
-                    if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
-                        val nuevoEvento = Evento(
-                            titulo = titulo,
-                            descripcion = descripcion,
-                            ubicacion = ubicacion,
-                            fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
-                            maxParticipantes = 15,
-                            tipo = tipo,
-                            creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
-                        )
-                        onSave(nuevoEvento)
-                    }
+                    val nuevoEvento = Evento(
+                        titulo = titulo,
+                        descripcion = descripcion,
+                        ubicacion = ubicacion,
+                        fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
+                        maxParticipantes = 15,
+                        tipo = tipo,
+                        creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
+                    )
+                    onSave(nuevoEvento)
                 } catch (e: Exception) {
                     Toast.makeText(context, "Error al guardar el evento: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
@@ -1012,21 +1024,24 @@ fun EditEventDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
+                if (titulo.isBlank() || descripcion.isBlank() || fecha == null || tipo.isBlank()) {
+                    Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
+                    return@TextButton
+                }
+                if (!validarFechaSuperiorOIgualAHoy(context, fecha)) {
+                    return@TextButton
+                }
                 try {
-                    if (validarCamposEvento(titulo, descripcion, ubicacion, fecha, tipo, context)) {
-                        val nuevoEvento = Evento(
-                            titulo = titulo,
-                            descripcion = descripcion,
-                            ubicacion = ubicacion,
-                            fecha = Timestamp(Date(fecha ?: System.currentTimeMillis())),
-                            maxParticipantes = 15,
-                            tipo = tipo,
-                            creadorId = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: ""
-                        )
-                        onSave(nuevoEvento)
-                    }
+                    val updatedEvento = evento.copy(
+                        titulo = titulo,
+                        descripcion = descripcion,
+                        ubicacion = ubicacion,
+                        fecha = Timestamp(Date(fecha!!)),
+                        tipo = tipo
+                    )
+                    onSave(updatedEvento)
                 } catch (e: Exception) {
-                    Toast.makeText(context, "Error al editar el evento: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error al guardar el evento: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }) {
                 Text("Guardar")
