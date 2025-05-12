@@ -221,7 +221,7 @@ fun AddPetDialog(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Button(
                     onClick = {
                         launcher.launch("image/*") // Abre el selector de imágenes
@@ -285,6 +285,7 @@ fun EditPetDialog(
     var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
     val context = LocalContext.current
 
+    //Logica para subir la foto a Firebase
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             uploadPhotoToFirebase(it) { uploadedUrl ->
@@ -537,6 +538,15 @@ fun AddLostPetDialog(
     var contacto by remember { mutableStateOf("") }
     var showMapDialog by remember { mutableStateOf(false) }
 
+    // Lógica para subir la foto a Firebase
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            uploadPhotoToFirebase(it) { uploadedUrl ->
+                fotoUrl = uploadedUrl // Actualiza el campo con la URL subida
+            }
+        } ?: Log.e("UploadPhoto", "No se seleccionó ninguna imagen")
+    }
+
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
         DatePickerDialog(
@@ -595,6 +605,11 @@ fun AddLostPetDialog(
                     onValueChange = { fotoUrl = it },
                     label = { Text("URL de la Foto") }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { launcher.launch("image/*") }) {
+                    Text("Subir foto")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = contacto,
                     onValueChange = { contacto = it },
@@ -646,6 +661,15 @@ fun EditLostPetDialog(
     var showDatePicker by remember { mutableStateOf(false) }
     var showMapDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    // Lógica para subir la foto a Firebase
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            uploadPhotoToFirebase(it) { uploadedUrl ->
+                fotoUrl = uploadedUrl // Actualiza el campo con la URL subida
+            }
+        } ?: Log.e("UploadPhoto", "No se seleccionó ninguna imagen")
+    }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = fechaPerdida)
@@ -703,6 +727,11 @@ fun EditLostPetDialog(
                     onValueChange = { fotoUrl = it },
                     label = { Text("URL de la Foto") }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { launcher.launch("image/*") }) {
+                    Text("Subir foto")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = contacto,
                     onValueChange = { contacto = it },
