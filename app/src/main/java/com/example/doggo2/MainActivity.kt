@@ -15,11 +15,11 @@ import android.util.Log
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
 
+    //Función principal de la actividad
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        initializeFirebaseAuth()
-        initializeGooglePlaces()
+        initializeServices()
 
         setContent {
             PetCommunityTheme {
@@ -29,11 +29,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun initializeFirebaseAuth() {
+    // Inicializa Firebase Auth y Google Places API
+    private fun initializeServices() {
+        // Inicializa Firebase Auth
         auth = Firebase.auth
-    }
 
-    private fun initializeGooglePlaces() {
+        // Inicializa Google Places API
         try {
             if (!Places.isInitialized()) {
                 val apiKey = getString(R.string.maps_api_key)
