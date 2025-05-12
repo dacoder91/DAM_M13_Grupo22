@@ -68,7 +68,9 @@ fun ProfileScreen(
                 val usuarioDocument = db.collection("usuarios").document(usuarioId).get().await()
                 if (usuarioDocument.exists()) {
                     val usuarioData = usuarioDocument.toObject(Usuario::class.java)
-                    usuario = usuarioData
+                    if (usuarioData != null) {
+                        usuario = usuarioData.copy(id = usuarioDocument.id) // Asigna el ID del documento al campo id
+                    }
 
                     val mascotasQuery = db.collection("mascotas")
                         .whereEqualTo("usuarioId", usuarioId)

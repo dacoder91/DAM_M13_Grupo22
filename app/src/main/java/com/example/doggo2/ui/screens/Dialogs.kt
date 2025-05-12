@@ -58,6 +58,8 @@ import androidx.core.app.ActivityCompat
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.models.Mascota
 import android.Manifest
+import androidx.compose.ui.res.painterResource
+import com.example.doggo2.R
 import com.example.doggo2.controller.calculateAge
 import com.example.doggo2.controller.enviarMensaje
 import com.example.doggo2.controller.getCityFromGeoPoint
@@ -203,31 +205,33 @@ fun AddPetDialog(
                 OutlinedTextField(
                     value = fotoUrl,
                     onValueChange = { fotoUrl = it },
-                    label = { Text("URL de la Foto") }
+                    label = { Text("URL de la Foto (opcional)") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                if (fotoUrl.isNotEmpty()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(fotoUrl),
-                        contentDescription = "Imagen de la mascota",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
-                }
+                Image(
+                    painter = if (fotoUrl.isNotEmpty()) {
+                        rememberAsyncImagePainter(fotoUrl)
+                    } else {
+                        painterResource(id = R.drawable.iconoperro)
+                    },
+                    contentDescription = "Imagen de la mascota",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (nombre.isBlank() || raza.isBlank() || fechaNacimiento == null || fotoUrl.isBlank()) {
-                    Toast.makeText(context, "Rellenar todos los campos", Toast.LENGTH_SHORT).show()
+                if (nombre.isBlank() || raza.isBlank() || fechaNacimiento == null) {
+                    Toast.makeText(context, "Rellenar todos los campos obligatorios", Toast.LENGTH_SHORT).show()
                     return@TextButton
                 }
                 val newPet = Mascota(
                     id = "",
                     nombre = nombre,
                     raza = raza,
-                    fotoUrl = fotoUrl,
+                    fotoUrl = if (fotoUrl.isNotEmpty()) fotoUrl else "",
                     usuarioId = usuarioId,
                     fechaNacimiento = Timestamp(Date(fechaNacimiento!!))
                 )
@@ -281,30 +285,32 @@ fun EditPetDialog(
                 OutlinedTextField(
                     value = fotoUrl,
                     onValueChange = { fotoUrl = it },
-                    label = { Text("URL de la Foto") }
+                    label = { Text("URL de la Foto (opcional)") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                if (fotoUrl.isNotEmpty()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(fotoUrl),
-                        contentDescription = "Imagen de la mascota",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
-                }
+                Image(
+                    painter = if (fotoUrl.isNotEmpty()) {
+                        rememberAsyncImagePainter(fotoUrl)
+                    } else {
+                        painterResource(id = R.drawable.iconoperro)
+                    },
+                    contentDescription = "Imagen de la mascota",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (nombre.isBlank() || raza.isBlank() || fotoUrl.isBlank()) {
-                    Toast.makeText(context, "Rellenar todos los campos", Toast.LENGTH_SHORT).show()
+                if (nombre.isBlank() || raza.isBlank()) {
+                    Toast.makeText(context, "Rellenar todos los campos obligatorios", Toast.LENGTH_SHORT).show()
                     return@TextButton
                 }
                 val updatedPet = mascota.copy(
                     nombre = nombre,
                     raza = raza,
-                    fotoUrl = fotoUrl
+                    fotoUrl = if (fotoUrl.isNotEmpty()) fotoUrl else ""
                 )
                 onSave(updatedPet)
             }) {
