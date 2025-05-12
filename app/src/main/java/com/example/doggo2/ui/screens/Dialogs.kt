@@ -58,6 +58,9 @@ import androidx.core.app.ActivityCompat
 import coil.compose.rememberAsyncImagePainter
 import com.example.doggo.models.Mascota
 import android.Manifest
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.res.painterResource
 import com.example.doggo2.R
 import com.example.doggo2.controller.calculateAge
@@ -82,6 +85,7 @@ import java.util.Date
 import java.util.Locale
 import com.example.doggo2.controller.createMapView
 import com.example.doggo2.controller.setupMap
+import com.example.doggo2.controller.uploadPhotoToFirebase
 
 // Diálogo para editar la información del perfil del usuario.
 // Permite modificar el nombre, email y teléfono del usuario.
@@ -159,6 +163,14 @@ fun AddPetDialog(
     var fotoUrl by remember { mutableStateOf("") }
     val context = LocalContext.current
 
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            uploadPhotoToFirebase(it) { uploadedUrl ->
+                fotoUrl = uploadedUrl // Actualiza el campo con la URL subida
+            }
+        } ?: Log.e("UploadPhoto", "No se seleccionó ninguna imagen")
+    }
+
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
         DatePickerDialog(
@@ -207,6 +219,18 @@ fun AddPetDialog(
                     onValueChange = { fotoUrl = it },
                     label = { Text("URL de la Foto (opcional)") }
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Button(
+                    onClick = {
+                        launcher.launch("image/*") // Abre el selector de imágenes
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Subir foto")
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Image(
                     painter = if (fotoUrl.isNotEmpty()) {
@@ -261,6 +285,15 @@ fun EditPetDialog(
     var fotoUrl by remember { mutableStateOf(mascota.fotoUrl) }
     val context = LocalContext.current
 
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            uploadPhotoToFirebase(it) { uploadedUrl ->
+                fotoUrl = uploadedUrl // Actualiza el campo con la URL subida
+            }
+        } ?: Log.e("UploadPhoto", "No se seleccionó ninguna imagen")
+    }
+
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Editar Mascota") },
@@ -287,6 +320,16 @@ fun EditPetDialog(
                     onValueChange = { fotoUrl = it },
                     label = { Text("URL de la Foto (opcional)") }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        launcher.launch("image/*") // Abre el selector de imágenes
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Subir foto")
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Image(
                     painter = if (fotoUrl.isNotEmpty()) {

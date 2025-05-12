@@ -48,6 +48,7 @@ fun ProfileScreen(
     val context = LocalContext.current
     val auth = Firebase.auth
     val db = FirebaseFirestore.getInstance()
+
     var usuario by remember { mutableStateOf<Usuario?>(null) }
     var mascotas by remember { mutableStateOf<List<Mascota>>(emptyList()) }
     var showEditDialog by remember { mutableStateOf(false) }

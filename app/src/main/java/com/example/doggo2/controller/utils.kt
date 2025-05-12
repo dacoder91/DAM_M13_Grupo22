@@ -36,6 +36,13 @@ import java.util.Calendar
 import java.util.Date
 import android.location.Geocoder
 import java.util.Locale
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 
 // Función para calcular la edad
 fun calculateAge(birthDate: Date): Int {
@@ -297,4 +304,39 @@ fun getCityFromGeoPoint(context: Context, geoPoint: GeoPoint): String {
     } catch (e: Exception) {
         "Error al obtener ciudad"
     }
+}
+
+//para subir imagenes a firebase
+@Composable
+fun SelectAndUploadPhoto(
+    onUploadComplete: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            uploadPhotoToFirebase(uri, onUploadComplete)
+        } else {
+            Log.e("UploadPhoto", "No se seleccionó ninguna imagen")
+        }
+    }
+
+    Button(onClick = { launcher.launch("image/*") }) {
+        Text("Subir foto")
+    }
+}
+
+fun uploadPhotoToFirebase(imageUri: Uri, onUploadComplete: (String) -> Unit) {
+    val storageRef = FirebaseStorage.getInstance().reference
+    val fileName = "images/${UUID.randomUUID()}.jpg"
+    val fileRef = storageRef.child(fileName)
+
+    fileRef.putFile(imageUri)
+        .addOnSuccessListener {
+            fileRef.downloadUrl.addOnSuccessListener { uri ->
+                onUploadComplete(uri.toString())
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e("UploadPhoto", "Error al subir la foto: ${e.message}", e)
+        }
 }

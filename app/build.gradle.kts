@@ -96,6 +96,8 @@ dependencies {
     implementation ("com.google.firebase:firebase-auth-ktx")
     implementation ("androidx.lifecycle:lifecycle-runtime-compose:2.7.0") // Para collectAsState con Flows
     implementation (libs.firebase.firestore.ktx)
+    implementation ("com.google.firebase:firebase-storage-ktx")
+    implementation ("androidx.activity:activity-compose:1.7.2")
 
     // Maps
     implementation (libs.maps.compose)
