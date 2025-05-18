@@ -1,5 +1,6 @@
 package com.example.doggo2.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -45,27 +46,33 @@ fun MapaScreen(
             alpha = 0.5f
         )
 
+        // Botón Salir
         Button(
             onClick = {
-                auth.signOut()
-                parentNavController.navigate("login") {
-                    popUpTo(0)
+                try {
+                    Firebase.auth.signOut()
+                    parentNavController.navigate("login") {
+                        popUpTo(0)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error al cerrar sesión: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(width = 110.dp, height = 35.dp),
+                .padding(12.dp)
+                .size(width = 65.dp, height = 35.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFE91E63),
                 contentColor = Color.White
             ),
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(20.dp) // Botón redondeado
         ) {
+            // Icono salida
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "")
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Salir")
         }
+
 
         Box(
             modifier = Modifier

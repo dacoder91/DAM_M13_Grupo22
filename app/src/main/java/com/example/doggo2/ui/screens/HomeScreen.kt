@@ -1,5 +1,6 @@
 package com.example.doggo2.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -37,6 +39,7 @@ fun HomeScreen(
 ) {
     val auth = Firebase.auth
     val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
     var usuario by remember { mutableStateOf<Usuario?>(null) }
 
     // Obtener el usuario actual de Firebase Auth
@@ -64,28 +67,33 @@ fun HomeScreen(
             alpha = 0.5f
         )
 
-        // Botón "Salir"
+        // Botón Salir
         Button(
             onClick = {
-                auth.signOut()
-                parentNavController.navigate("login") {
-                    popUpTo(0)
+                try {
+                    Firebase.auth.signOut()
+                    parentNavController.navigate("login") {
+                        popUpTo(0)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error al cerrar sesión: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(width = 110.dp, height = 35.dp),
+                .padding(12.dp)
+                .size(width = 65.dp, height = 35.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFE91E63),
                 contentColor = Color.White
             ),
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(20.dp) // Botón redondeado
         ) {
+            // Icono salida
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "")
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Salir")
         }
+
 
         // Contenido principal
         Column(
@@ -99,7 +107,7 @@ fun HomeScreen(
 
             // Icono principal (reutiliza el avatar del perfil)
             Image(
-                painter = painterResource(id = R.drawable.iconohome),
+                painter = painterResource(id = R.drawable.iconohome1),
                 contentDescription = "Icono central",
                 modifier = Modifier
                     .size(96.dp)
