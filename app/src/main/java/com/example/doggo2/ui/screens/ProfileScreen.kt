@@ -185,8 +185,6 @@ fun ProfileScreen(
                 contentDescription = "Avatar",
                 modifier = Modifier
                     .size(96.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             )
 
             Spacer(modifier = Modifier.height(8.dp))
