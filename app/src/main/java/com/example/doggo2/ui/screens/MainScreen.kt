@@ -18,37 +18,27 @@ fun MainScreen(
     navController: NavHostController,
     parentNavController: NavHostController
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
 
-    // Se establece el fondo de la pantalla principal
     Scaffold(
         bottomBar = {
             BottomNavigationBar(navController = navController, currentRoute = currentRoute)
         }
-        // Se establece el contenido de la pantalla principal
-    ) { innerPadding ->
-        // Se define la navegación entre las diferentes pantallas de la aplicación
+    )
+    { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            startDestination = "home",
+            modifier = Modifier.padding(innerPadding) // ← Añadido
         ) {
-            composable(BottomNavItem.Home.route) {
+        composable("home") {
                 HomeScreen(navController, parentNavController)
             }
-            composable(BottomNavItem.Eventos.route) {
-                EventosScreen(navController, parentNavController)
-            }
-            composable(BottomNavItem.Mapa.route) {
-                MapaScreen(navController, parentNavController)
-            }
-            composable(BottomNavItem.Perdidos.route) {
-                MascotasPerdidasScreen(navController, parentNavController)
-            }
-            composable(BottomNavItem.Perfil.route) {
-                ProfileScreen(navController, parentNavController)
-            }
+            composable("eventos") { EventosScreen(navController, parentNavController) }
+            composable("mapa") { MapaScreen(navController, parentNavController) }
+            composable("perdidos") { MascotasPerdidasScreen(navController, parentNavController) }
+            composable("perfil") { ProfileScreen(navController, parentNavController) }
         }
     }
 }

@@ -14,10 +14,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.doggo2.R
 import com.example.doggo2.ui.components.CustomButton
@@ -73,11 +75,10 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+                .padding(horizontal = 32.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Icono principal (reutiliza el avatar del perfil)
             Image(
@@ -89,66 +90,79 @@ fun HomeScreen(
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(45.dp))
 
             // Texto de bienvenida
-            Text(
-                text = "Bienvenido/a a DogGo \n${usuario?.nombre ?: "Usuario"}",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontFamily = FontFamily(Font(R.font.yellowpeach)) // asegúrate de tenerlo importado correctamente
-                ),
-                textAlign = TextAlign.Center,
-                color = Color.Black
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Bienvenido/a a",
+                    fontSize = 28.sp,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(40.dp))
+                Text(
+                    text = "DogGo",
+                    fontSize = 48.sp,
+                    fontFamily = FontFamily(Font(R.font.yellowpeach)),
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+
+                Text(
+                    text = usuario?.nombre ?: "Usuario",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+
+
+            Spacer(modifier = Modifier.weight(0.5f))
 
             // Botones de acción
-            val buttonColor = Color(0xFFE91E63)
-            val buttonModifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .height(50.dp)
-
-            val buttonShape = RoundedCornerShape(20.dp)
-            val textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
-
-            //a continuacion se crean los botones de la pantalla de inicio
             CustomButton(
                 text = "Eventos",
                 icon = painterResource(id = R.drawable.ic_eventos),
                 onClick = { navController.navigate("eventos") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 15.dp)
             )
-
             CustomButton(
                 text = "Mapa",
                 icon = painterResource(id = R.drawable.ic_mapa),
                 onClick = { navController.navigate("mapa") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 15.dp)
             )
-
             CustomButton(
                 text = "Perdidos",
                 icon = painterResource(id = R.drawable.ic_perdidos),
                 onClick = { navController.navigate("perdidos") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 15.dp)
             )
-
             CustomButton(
                 text = "Perfil",
                 icon = painterResource(id = R.drawable.ic_perfil),
                 onClick = { navController.navigate("perfil") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 15.dp)
             )
+
+            Spacer(modifier = Modifier.weight(0.5f)) // algo de margen inferior
         }
     }
 }
