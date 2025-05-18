@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.doggo2.R
+import com.example.doggo2.ui.components.LogoutButton
 import com.example.doggo2.controller.ActionButton
 import com.example.doggo2.models.Usuario
 import com.google.firebase.firestore.FirebaseFirestore
@@ -39,7 +40,6 @@ fun HomeScreen(
 ) {
     val auth = Firebase.auth
     val db = FirebaseFirestore.getInstance()
-    val context = LocalContext.current
     var usuario by remember { mutableStateOf<Usuario?>(null) }
 
     // Obtener el usuario actual de Firebase Auth
@@ -68,31 +68,10 @@ fun HomeScreen(
         )
 
         // Botón Salir
-        Button(
-            onClick = {
-                try {
-                    Firebase.auth.signOut()
-                    parentNavController.navigate("login") {
-                        popUpTo(0)
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error al cerrar sesión: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .size(width = 65.dp, height = 35.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE91E63),
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(20.dp) // Botón redondeado
-        ) {
-            // Icono salida
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "")
-            Spacer(modifier = Modifier.width(4.dp))
-        }
+        LogoutButton(
+            modifier = Modifier.align(Alignment.TopEnd),
+            parentNavController = parentNavController
+        )
 
 
         // Contenido principal

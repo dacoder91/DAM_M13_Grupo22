@@ -30,6 +30,7 @@ import com.example.doggo2.R
 import com.example.doggo.models.Mascota
 import com.example.doggo2.controller.calculateAge
 import com.example.doggo2.models.Usuario
+import com.example.doggo2.ui.components.LogoutButton
 import com.example.doggo2.ui.screens.ui.theme.YellowPeach
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -162,32 +163,12 @@ fun ProfileScreen(
         )
 
         // Botón Salir
-        Button(
-            onClick = {
-                try {
-                    auth.signOut()
-                    parentNavController.navigate("login") {
-                        popUpTo(0)
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error al cerrar sesión: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .size(width = 65.dp, height = 35.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE91E63),
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(20.dp) // Botón redondeado
-        ) {
-            // Icono salida
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "")
-            Spacer(modifier = Modifier.width(4.dp))
-        }
+        LogoutButton(
+            modifier = Modifier.align(Alignment.TopEnd),
+            parentNavController = parentNavController
+        )
 
+        // Contenido principal
         Column(
             modifier = Modifier
                 .fillMaxSize()
