@@ -7,13 +7,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.doggo2.ui.screens.LoginScreen
 import com.example.doggo2.ui.screens.MainScreen
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
+import com.example.doggo2.R
 
 // Función principal de navegación de la aplicación
 @Composable
@@ -30,14 +26,16 @@ fun AppNavigation(navController: NavHostController) {
 }
 
 // Definición de los elementos del menú de navegación inferior
-sealed class BottomNavItem(val title: String, val icon: ImageVector, val route: String) {
-    object Home : BottomNavItem("Home", Icons.Filled.Home, "home")
-    object Eventos : BottomNavItem("Eventos", Icons.Filled.Event, "eventos")
-    object Mapa : BottomNavItem("Mapa", Icons.Filled.Map, "mapa")
-    object Perdidos : BottomNavItem("Perdidos", Icons.Filled.Pets, "perdidos")
-    object Perfil : BottomNavItem("Perfil", Icons.Filled.Person, "perfil")
-
+sealed class BottomNavItem(val title: String, val icon: Painter, val route: String) {
     companion object {
-        val items = listOf(Home, Eventos, Mapa, Perdidos, Perfil)
+        @Composable
+        fun items() = listOf(
+            BottomNavItemData("Home", painterResource(id = R.drawable.ic_home), "home"),
+            BottomNavItemData("Eventos", painterResource(id = R.drawable.ic_eventos), "eventos"),
+            BottomNavItemData("Mapa", painterResource(id = R.drawable.ic_mapa), "mapa"),
+            BottomNavItemData("Perdidos", painterResource(id = R.drawable.ic_perdidos), "perdidos"),
+            BottomNavItemData("Perfil", painterResource(id = R.drawable.ic_perfil), "perfil")
+        )
     }
 }
+

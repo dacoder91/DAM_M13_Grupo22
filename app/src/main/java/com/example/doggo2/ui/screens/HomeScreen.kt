@@ -102,6 +102,7 @@ fun HomeScreen(
                 Text(
                     text = "Bienvenido/a a",
                     fontSize = 28.sp,
+                    fontFamily = FontFamily(Font(R.font.yellowpeach)),
                     color = Color.DarkGray,
                     textAlign = TextAlign.Center
                 )

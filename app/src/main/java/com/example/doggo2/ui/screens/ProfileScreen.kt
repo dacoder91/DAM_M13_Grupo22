@@ -36,6 +36,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import com.example.doggo2.ui.components.CustomButton
 import kotlinx.coroutines.tasks.await
 
 // Pantalla principal del perfil del usuario. Muestra la información del usuario,
@@ -193,7 +195,7 @@ fun ProfileScreen(
             Text(
                 text = usuario?.nombre ?: "Sin nombre",
                 style = TextStyle(
-                    fontFamily = YellowPeach,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 26.sp
                 )
             )
@@ -214,7 +216,7 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = "Mi Perfil",
-                        style = TextStyle(fontFamily = YellowPeach, fontSize = 18.sp),
+                        style = TextStyle(fontFamily = YellowPeach, fontWeight = FontWeight.Bold, fontSize = 18.sp),
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
@@ -224,8 +226,14 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text(text = "Email: ${usuario?.email ?: "Sin correo"}")
-                            Text(text = "Teléfono: ${usuario?.telefono ?: "Sin teléfono"}")
+                            Row {
+                                Text("Email: ", fontWeight = FontWeight.Bold)
+                                Text(usuario?.email ?: "Sin correo")
+                            }
+                            Row {
+                                Text("Teléfono: ", fontWeight = FontWeight.Bold)
+                                Text(usuario?.telefono ?: "Sin teléfono")
+                            }
                         }
 
                         IconButton(onClick = {
@@ -247,6 +255,7 @@ fun ProfileScreen(
                 text = "Mis Mascotas",
                 style = TextStyle(
                     fontFamily = YellowPeach,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 22.sp
                 )
             )
@@ -310,9 +319,18 @@ fun ProfileScreen(
 
                                     // Información de la mascota
                                     Column {
-                                        Text(text = "Nombre: ${mascota.nombre}")
-                                        Text(text = "Raza: ${mascota.raza}")
-                                        Text(text = "Edad: ${calculateAge(mascota.fechaNacimiento.toDate())} años")
+                                        Row {
+                                            Text("Nombre: ", fontWeight = FontWeight.Bold)
+                                            Text(mascota.nombre)
+                                        }
+                                        Row {
+                                            Text("Raza: ", fontWeight = FontWeight.Bold)
+                                            Text(mascota.raza)
+                                        }
+                                        Row {
+                                            Text("Edad: ", fontWeight = FontWeight.Bold)
+                                            Text("${calculateAge(mascota.fechaNacimiento.toDate())} años")
+                                        }
                                     }
                                 }
 
@@ -343,7 +361,7 @@ fun ProfileScreen(
                                         Icon(
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = "Eliminar mascota",
-                                            tint = MaterialTheme.colorScheme.error
+                                            tint = MaterialTheme.colorScheme.secondary
                                         )
                                     }
                                 }
@@ -355,21 +373,15 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
+            CustomButton(
+                text = "Añadir Mascota",
+                icon = painterResource(id = R.drawable.ic_mas), // usa el icono vectorizado si lo tienes
                 onClick = { showAddPetDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE91E63),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Añadir Mascota")
-            }
+                    .padding(bottom = 8.dp)
+            )
+
         }
     }
 }
