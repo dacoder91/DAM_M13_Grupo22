@@ -1,23 +1,18 @@
 package com.example.doggo2.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -25,8 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.doggo2.R
+import com.example.doggo2.ui.components.CustomButton
 import com.example.doggo2.ui.components.LogoutButton
-import com.example.doggo2.controller.ActionButton
 import com.example.doggo2.models.Usuario
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -119,21 +114,41 @@ fun HomeScreen(
             val textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
 
             //a continuacion se crean los botones de la pantalla de inicio
-            ActionButton("Eventos", R.drawable.iconoeventos, buttonColor, textStyle, buttonModifier, buttonShape) {
-                navController.navigate("eventos")
-            }
+            CustomButton(
+                text = "Eventos",
+                icon = painterResource(id = R.drawable.ic_eventos),
+                onClick = { navController.navigate("eventos") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
 
-            ActionButton("Mapa", R.drawable.iconomapa, buttonColor, textStyle, buttonModifier, buttonShape) {
-                navController.navigate("mapa")
-            }
+            CustomButton(
+                text = "Mapa",
+                icon = painterResource(id = R.drawable.ic_mapa),
+                onClick = { navController.navigate("mapa") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
 
-            ActionButton("Perdidos", R.drawable.iconoperdidos, buttonColor, textStyle, buttonModifier, buttonShape) {
-                navController.navigate("perdidos")
-            }
+            CustomButton(
+                text = "Perdidos",
+                icon = painterResource(id = R.drawable.ic_perdidos),
+                onClick = { navController.navigate("perdidos") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
 
-            ActionButton("Perfil", R.drawable.iconoperfil, buttonColor, textStyle, buttonModifier, buttonShape) {
-                navController.navigate("perfil")
-            }
+            CustomButton(
+                text = "Perfil",
+                icon = painterResource(id = R.drawable.ic_perfil),
+                onClick = { navController.navigate("perfil") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
         }
     }
 }

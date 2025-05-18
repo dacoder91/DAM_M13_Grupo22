@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
@@ -180,7 +179,7 @@ fun ProfileScreen(
 
             // Icono de pantalla
             Image(
-                painter = painterResource(id = R.drawable.iconoperfil),
+                painter = painterResource(id = R.drawable.ic_perfil),
                 contentDescription = "Avatar",
                 modifier = Modifier
                     .size(96.dp)

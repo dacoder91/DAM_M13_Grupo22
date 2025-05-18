@@ -1,6 +1,7 @@
 package com.example.doggo2.ui.screens
 
 import com.example.doggo2.R
+import com.example.doggo2.ui.components.CustomButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
@@ -11,10 +12,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.doggo2.controller.enviarCorreo
 import com.google.firebase.auth.*
@@ -67,11 +74,28 @@ fun LoginScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "\uD83D\uDC3E DogGo",
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_huellitas),
+                    contentDescription = "Icono de huellas",
+                    modifier = Modifier.size(55.dp),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "DogGo",
+                    fontSize = 55.sp,
+                    fontFamily = FontFamily(Font(R.font.yellowpeach)),
+                    color = Color.Black
+                )
+            }
+
 
             // Campo Email
             OutlinedTextField(
@@ -81,7 +105,12 @@ fun LoginScreen(navController: NavController) {
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 isError = errorMessage != null,
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorResource(id = R.color.doggo_pink),
+                    cursorColor = colorResource(id = R.color.doggo_pink),
+                    focusedLabelColor = colorResource(id = R.color.doggo_pink)
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -95,17 +124,23 @@ fun LoginScreen(navController: NavController) {
                 visualTransformation = PasswordVisualTransformation(),
                 isError = errorMessage != null,
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorResource(id = R.color.doggo_pink),
+                    cursorColor = colorResource(id = R.color.doggo_pink),
+                    focusedLabelColor = colorResource(id = R.color.doggo_pink)
+                )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Botón Iniciar Sesión
-            Button(
+            CustomButton(
+                text = if (isLoading) "" else "Iniciar sesión", // ocultamos texto si está cargando
                 onClick = {
                     if (email.isBlank() || password.isBlank()) {
                         errorMessage = "Por favor completa todos los campos"
-                        return@Button
+                        return@CustomButton
                     }
 
                     scope.launch {
@@ -129,11 +164,14 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                shape = MaterialTheme.shapes.large,
-                enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
-            ) {
-                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                else Text("Iniciar sesión")
+            )
+
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(top = 8.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -143,7 +181,11 @@ fun LoginScreen(navController: NavController) {
                 onClick = { showRegisterDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("¿No tienes cuenta? ¡Regístrate!", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "¿No tienes cuenta? ¡Regístrate!",
+                    color = colorResource(id = R.color.doggo_pink),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             // Loading y errores
