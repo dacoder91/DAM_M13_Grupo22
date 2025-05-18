@@ -9,7 +9,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.doggo2.ui.navigation.BottomNavItem
 import com.example.doggo2.ui.screens.ui.theme.BottomNavigationBar
 
 // Función principal que define la pantalla principal de la aplicación

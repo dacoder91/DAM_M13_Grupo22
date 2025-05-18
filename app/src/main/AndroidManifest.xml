@@ -21,16 +21,17 @@
         android:theme="@style/Theme.DogGo.Splash"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.DogGo"
-            tools:ignore="MissingClass">
+            android:theme="@style/Theme.DogGo">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Asegúrate de que MainActivity no tenga el LAUNCHER -->
+        <activity android:name=".MainActivity" />
 
         <!-- Clave de API de Google Maps -->
         <meta-data
