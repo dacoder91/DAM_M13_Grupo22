@@ -82,11 +82,12 @@ fun HomeScreen(
 
             // Icono principal (reutiliza el avatar del perfil)
             Image(
-                painter = painterResource(id = R.drawable.ic_home),
+                painter = painterResource(id = R.drawable.iconohome1),
                 contentDescription = "Icono central",
                 modifier = Modifier
                     .size(96.dp)
                     .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             )
 
             Spacer(modifier = Modifier.height(45.dp))
