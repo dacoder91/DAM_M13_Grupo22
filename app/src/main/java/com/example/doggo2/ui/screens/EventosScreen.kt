@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -29,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.example.doggo2.R
 import com.example.doggo2.ui.components.LogoutButton
+import com.example.doggo2.ui.components.CustomButton
 import com.example.doggo2.ui.screens.ui.theme.YellowPeach
 import java.text.SimpleDateFormat
 import java.util.*
@@ -107,19 +107,6 @@ fun EventosScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = { showMapDialog = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Text("Ver Eventos en el Mapa")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             Text(
                 text = "Eventos",
                 fontFamily = YellowPeach,
@@ -130,16 +117,19 @@ fun EventosScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = { showMyEventsDialog = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
-                ),
+            CustomButton(
+                text = "Ver Eventos en el Mapa",
+                onClick = { showMapDialog = true },
                 modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Text("Mis Eventos")
-            }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            CustomButton(
+                text = "Mis Eventos",
+                onClick = { showMyEventsDialog = true },
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
             LazyColumn(
                 modifier = Modifier.weight(1f),
@@ -168,85 +158,152 @@ fun EventosScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Título: ${evento.titulo}", fontSize = 18.sp)
-                                        Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(evento.fecha.toDate())}")
-                                        Text("Ubicación: ${getCityFromGeoPoint(context, evento.ubicacion)}")
-                                        Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
+
+                                        Row {
+                                            Text("Título: ${evento.titulo}", fontSize = 18.sp)
+                                        }
+                                        Row {
+                                            Text(
+                                                "Fecha: ${
+                                                    SimpleDateFormat(
+                                                        "dd/MM/yyyy",
+                                                        Locale.getDefault()
+                                                    ).format(evento.fecha.toDate())
+                                                }"
+                                            )
+                                        }
+                                        Row {
+                                            Text(
+                                                "Ubicación: ${
+                                                    getCityFromGeoPoint(
+                                                        context,
+                                                        evento.ubicacion
+                                                    )
+                                                }"
+                                            )
+                                        }
+                                        Row {
+                                            Text("Participantes: ${evento.participantes.size}/${evento.maxParticipantes}")
+                                        }
+
+                                        if (evento.creadorId == currentUser?.uid) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                IconButton(onClick = {
+                                                    selectedEvento = evento
+                                                    showEditDialog = true
+                                                }) {
+                                                    Icon(
+                                                        Icons.Default.Edit,
+                                                        contentDescription = "Editar",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+
+                                                IconButton(onClick = {
+                                                    db.collection("eventos").document(evento.id)
+                                                        .delete()
+                                                        .addOnSuccessListener {
+                                                            Toast.makeText(
+                                                                navController.context,
+                                                                "Evento eliminado",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                }) {
+                                                    Icon(
+                                                        Icons.Default.Delete,
+                                                        contentDescription = "Eliminar",
+                                                        tint = MaterialTheme.colorScheme.secondary
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
 
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Button(
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Column(
+                                        horizontalAlignment = Alignment.End,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        // Botón Unirse
+                                        CustomButton(
+                                            text = when {
+                                                evento.participantes.contains(currentUser?.uid) -> "Unido ✓"
+                                                evento.participantes.size >= evento.maxParticipantes -> "Completo"
+                                                else -> "Unirse"
+                                            },
                                             onClick = {
                                                 try {
                                                     when {
                                                         evento.participantes.contains(currentUser?.uid) -> {
-                                                            Toast.makeText(navController.context, "Ya estás unido a este evento", Toast.LENGTH_SHORT).show()
+                                                            Toast.makeText(
+                                                                navController.context,
+                                                                "Ya estás unido a este evento",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
                                                         }
+
                                                         evento.participantes.size >= evento.maxParticipantes -> {
-                                                            Toast.makeText(navController.context, "Evento completo", Toast.LENGTH_SHORT).show()
+                                                            Toast.makeText(
+                                                                navController.context,
+                                                                "Evento completo",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
                                                         }
+
                                                         else -> {
-                                                            val updatedParticipantes = evento.participantes + currentUser!!.uid
-                                                            db.collection("eventos").document(evento.id)
-                                                                .update("participantes", updatedParticipantes)
+                                                            val updatedParticipantes =
+                                                                evento.participantes + currentUser!!.uid
+                                                            db.collection("eventos")
+                                                                .document(evento.id)
+                                                                .update(
+                                                                    "participantes",
+                                                                    updatedParticipantes
+                                                                )
                                                                 .addOnSuccessListener {
-                                                                    Toast.makeText(navController.context, "¡Te has unido al evento!", Toast.LENGTH_SHORT).show()
+                                                                    Toast.makeText(
+                                                                        navController.context,
+                                                                        "¡Te has unido al evento!",
+                                                                        Toast.LENGTH_SHORT
+                                                                    ).show()
                                                                 }
                                                                 .addOnFailureListener { e ->
-                                                                    Toast.makeText(navController.context, "Error al unirse: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                                    Toast.makeText(
+                                                                        navController.context,
+                                                                        "Error al unirse: ${e.message}",
+                                                                        Toast.LENGTH_SHORT
+                                                                    ).show()
                                                                 }
                                                         }
                                                     }
                                                 } catch (e: Exception) {
-                                                    Toast.makeText(navController.context, "Error inesperado: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(
+                                                        navController.context,
+                                                        "Error inesperado: ${e.message}",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
                                                 }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = if (evento.participantes.contains(currentUser?.uid)) {
-                                                    Color.LightGray
-                                                } else {
-                                                    Color(0xFF4CAF50)
-                                                },
-                                                contentColor = Color.White
-                                            ),
-                                            modifier = Modifier.padding(bottom = 8.dp)
-                                        ) {
-                                            Text(
-                                                text = if (evento.participantes.contains(currentUser?.uid)) {
-                                                    "Unido ✓"
-                                                } else if (evento.participantes.size >= evento.maxParticipantes) {
-                                                    "Completo"
-                                                } else {
-                                                    "Unirse"
-                                                },
-                                                fontFamily = YellowPeach,
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.Black
-                                            )
-                                        }
+                                            }
+                                        )
 
-                                        Button(
+                                        // Botón +Info
+                                        CustomButton(
+                                            text = "+Info",
                                             onClick = {
                                                 selectedEvento = evento
                                                 showEditDialog = false
                                                 showInfoDialog = true
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF2196F3),
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "+Info",
-                                                fontFamily = YellowPeach,
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.Black
-                                            )
-                                        }
+                                            }
+                                        )
 
-                                        Button(
+                                        // Botón Chat
+                                        CustomButton(
+                                            text = "Chat",
                                             onClick = {
                                                 if (evento.participantes.contains(currentUser?.uid)) {
                                                     selectedEvento = evento
@@ -258,46 +315,8 @@ fun EventosScreen(
                                                         Toast.LENGTH_SHORT
                                                     ).show()
                                                 }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF9C27B0),
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Chat")
-                                        }
-                                    }
-                                }
-
-                                if (evento.creadorId == currentUser?.uid) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.Start,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        IconButton(onClick = {
-                                            selectedEvento = evento
-                                            showEditDialog = true
-                                        }) {
-                                            Icon(
-                                                Icons.Default.Edit,
-                                                contentDescription = "Editar",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-
-                                        IconButton(onClick = {
-                                            db.collection("eventos").document(evento.id).delete()
-                                                .addOnSuccessListener {
-                                                    Toast.makeText(navController.context, "Evento eliminado", Toast.LENGTH_SHORT).show()
-                                                }
-                                        }) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = "Eliminar",
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        }
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -308,21 +327,13 @@ fun EventosScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
+            CustomButton(
+                text = "Añadir Evento",
+                icon = painterResource(id = R.drawable.ic_mas),
                 onClick = { showAddDialog = true },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE91E63),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Añadir evento")
-            }
+                    .padding(bottom = 8.dp)
+            )
         }
     }
 

@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -185,7 +184,7 @@ fun ProfileScreen(
                 contentDescription = "Avatar",
                 modifier = Modifier
                     .size(96.dp)
-                    .clip(CircleShape)
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             )
 
@@ -195,6 +194,7 @@ fun ProfileScreen(
             Text(
                 text = usuario?.nombre ?: "Sin nombre",
                 style = TextStyle(
+                    fontFamily = YellowPeach,
                     fontWeight = FontWeight.Bold,
                     fontSize = 26.sp
                 )
@@ -375,13 +375,11 @@ fun ProfileScreen(
 
             CustomButton(
                 text = "Añadir Mascota",
-                icon = painterResource(id = R.drawable.ic_mas), // usa el icono vectorizado si lo tienes
+                icon = painterResource(id = R.drawable.ic_mas),
                 onClick = { showAddPetDialog = true },
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(bottom = 8.dp)
             )
-
         }
     }
 }

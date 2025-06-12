@@ -40,7 +40,7 @@ fun CustomButton(
             Image(
                 painter = icon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(20.dp),
                 colorFilter = ColorFilter.tint(Color.White)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -48,7 +48,7 @@ fun CustomButton(
         Text(
             text = text,
             fontFamily = font,
-            fontSize = 22.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )
     }

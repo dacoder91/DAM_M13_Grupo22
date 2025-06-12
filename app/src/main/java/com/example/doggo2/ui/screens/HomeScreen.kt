@@ -86,7 +86,7 @@ fun HomeScreen(
                 contentDescription = "Icono central",
                 modifier = Modifier
                     .size(96.dp)
-                    .clip(CircleShape)
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             )
 
@@ -119,6 +119,7 @@ fun HomeScreen(
                 Text(
                     text = usuario?.nombre ?: "Usuario",
                     fontSize = 30.sp,
+                    fontFamily = FontFamily(Font(R.font.yellowpeach)),
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     textAlign = TextAlign.Center,

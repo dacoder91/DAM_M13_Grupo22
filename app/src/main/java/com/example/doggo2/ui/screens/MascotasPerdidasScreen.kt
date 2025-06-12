@@ -2,7 +2,9 @@ package com.example.doggo2.ui.screens
 
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,18 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -54,6 +50,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.doggo2.R
 import com.example.doggo2.controller.getCityFromGeoPoint
 import com.example.doggo2.models.MascotaPerdida
+import com.example.doggo2.ui.components.CustomButton
 import com.example.doggo2.ui.components.LogoutButton
 import com.example.doggo2.ui.screens.ui.theme.YellowPeach
 import com.google.firebase.Firebase
@@ -78,6 +75,7 @@ fun MascotasPerdidasScreen(
     var selectedMascota by remember { mutableStateOf<MascotaPerdida?>(null) }
     var mostrarEncontradas by remember { mutableStateOf(false) }
     var showMapDialog by remember { mutableStateOf(false) }
+    val showHeader by remember { mutableStateOf(true) }
 
     // Escuchar cambios en la colección de mascotas perdidas
     LaunchedEffect(mostrarEncontradas) {
@@ -115,187 +113,222 @@ fun MascotasPerdidasScreen(
             parentNavController = parentNavController
         )
 
-
-        // Contenido principal
-        Column(
+        AnimatedVisibility(
+            visible = showHeader,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .align(Alignment.TopCenter)
+                .padding(top = 32.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Mascotas Perdidas",
-                style = TextStyle(fontFamily = YellowPeach, fontSize = 28.sp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            // Checkbox para mostrar encontradas
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
+            // Contenido principal
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Checkbox(
-                    checked = mostrarEncontradas,
-                    onCheckedChange = { mostrarEncontradas = it }
+                Image(
+                    painter = painterResource(id = R.drawable.ic_perdidos),
+                    contentDescription = "Icono Perdidos",
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                 )
-                Text("Mostrar encontradas")
-            }
 
-            //lazycolumn para mostrar las mascotas perdidas
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(mascotasPerdidas) { mascota ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            // Indicador de mascota encontrada
-                            if (mascota.encontrado) {
-                                Text(
-                                    text = "ENCONTRADA",
-                                    color = Color.Green,
-                                    style = TextStyle(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.align(Alignment.End)
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                if (mascota.fotoUrl.isNotEmpty()) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(mascota.fotoUrl),
-                                        contentDescription = "Foto de la mascota",
-                                        modifier = Modifier
-                                            .size(192.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                Text(
+                    text = "Mascotas Perdidas",
+                    style = TextStyle(
+                        fontFamily = YellowPeach,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Checkbox para mostrar encontradas
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Checkbox(
+                        checked = mostrarEncontradas,
+                        onCheckedChange = { mostrarEncontradas = it }
+                    )
+                    Text(
+                        text = "Mostrar encontradas",
+                        style = TextStyle(
+                            fontFamily = YellowPeach,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    )
+                }
+
+                //lazycolumn para mostrar las mascotas perdidas
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(mascotasPerdidas) { mascota ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                // Indicador de mascota encontrada
+                                if (mascota.encontrado) {
+                                    Text(
+                                        text = "ENCONTRADA",
+                                        color = Color.Green,
+                                        style = TextStyle(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.align(Alignment.End)
                                     )
-                                } else {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.imagenperroperdido),
-                                        contentDescription = "Sin imagen",
-                                        modifier = Modifier
-                                            .size(192.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text("Nombre: ${mascota.nombreMascota}")
-                            Text(
-                                "Fecha publicación: ${
-                                    SimpleDateFormat(
-                                        "dd/MM/yyyy",
-                                        Locale.getDefault()
-                                    ).format(mascota.fechaPerdida.toDate())
-                                }"
-                            )
-                            Text("Ubicación: ${getCityFromGeoPoint(context, mascota.ubicacion)}")
-                            Text("Contacto: ${mascota.contacto}")
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            //esta Row contiene los botones de editar y eliminar
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                if (mascota.usuarioId == Firebase.auth.currentUser?.uid) {
-                                    IconButton(onClick = {
-                                        selectedMascota = mascota
-                                        showEditDialog = true
-                                    }) {
-                                        Icon(
-                                            Icons.Default.Edit,
-                                            contentDescription = "Editar",
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-
-                                    IconButton(onClick = {
-                                        db.collection("mascotasPerdidas").document(mascota.id)
-                                            .delete()
-                                            .addOnSuccessListener {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Mascota eliminada",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                    }) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Eliminar",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Checkbox(
-                                            checked = mascota.encontrado,
-                                            onCheckedChange = { isChecked ->
-                                                db.collection("mascotasPerdidas")
-                                                    .document(mascota.id)
-                                                    .update("encontrado", isChecked)
-                                                    .addOnSuccessListener {
-                                                        Toast.makeText(
-                                                            context,
-                                                            "Estado actualizado",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                    }
-                                            }
-                                        )
-                                        Text("¿Encontrado?")
-                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
 
-                                // Botón para ver ubicación en el mapa
-                                Button(
-                                    onClick = {
-                                        selectedMascota = mascota
-                                        showMapDialog = true
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(6.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Text("Mapa")
+                                    if (mascota.fotoUrl.isNotEmpty()) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(mascota.fotoUrl),
+                                            contentDescription = "Foto de la mascota",
+                                            modifier = Modifier
+                                                .size(192.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    } else {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.iconoperro),
+                                            contentDescription = "Sin imagen",
+                                            modifier = Modifier
+                                                .size(192.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row {
+                                    Text("Nombre: ", fontWeight = FontWeight.Bold)
+                                    Text(" ${mascota.nombreMascota}")
+                                }
+
+                                Row {
+                                    Text("Fecha publicación: ", fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "${
+                                            SimpleDateFormat(
+                                                "dd/MM/yyyy",
+                                                Locale.getDefault()
+                                            ).format(mascota.fechaPerdida.toDate())
+                                        }"
+                                    )
+                                }
+
+                                Row {
+                                    Text("Ubicación: ", fontWeight = FontWeight.Bold)
+                                    Text("${getCityFromGeoPoint(context, mascota.ubicacion)}")
+                                }
+
+                                Row {
+                                Text("Contacto: ", fontWeight = FontWeight.Bold)
+                                Text("${mascota.contacto}")
+                                    }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                //esta Row contiene los botones de editar y eliminar
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    if (mascota.usuarioId == Firebase.auth.currentUser?.uid) {
+                                        IconButton(onClick = {
+                                            selectedMascota = mascota
+                                            showEditDialog = true
+                                        }) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Editar",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+
+                                        IconButton(onClick = {
+                                            db.collection("mascotasPerdidas").document(mascota.id)
+                                                .delete()
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Mascota eliminada",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                        }) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Eliminar",
+                                                tint = MaterialTheme.colorScheme.secondary
+                                            )
+                                        }
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = mascota.encontrado,
+                                                onCheckedChange = { isChecked ->
+                                                    db.collection("mascotasPerdidas")
+                                                        .document(mascota.id)
+                                                        .update("encontrado", isChecked)
+                                                        .addOnSuccessListener {
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Estado actualizado",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                }
+                                            )
+                                            Text(
+                                                text = "¿Encontrado?",
+                                                style = TextStyle(
+                                                    fontFamily = YellowPeach,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 16.sp
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    // Botón para ver ubicación en el mapa
+                                    CustomButton(
+                                        text = "Ver ubicación",
+                                        onClick = {
+                                            selectedMascota = mascota
+                                            showMapDialog = true
+                                        }
+                                    )
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = { showAddDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE91E63),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Añadir anuncio de mascota perdida")
+                CustomButton(
+                    text = "Añadir mascota perdida",
+                    icon = painterResource(id = R.drawable.ic_mas),
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                )
             }
         }
-
     }
 
     // Diálogo para añadir una nueva mascota perdida
@@ -326,6 +359,7 @@ fun MascotasPerdidasScreen(
             }
         )
     }
+
     // Diálogo para mostrar la ubicación en el mapa
     if (showMapDialog && selectedMascota != null) {
         MapDialog2(
