@@ -44,7 +44,12 @@ import java.util.UUID
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 
-// Función para calcular la edad
+/**
+ * Calcula la edad en años a partir de una fecha de nacimiento dada.
+ *
+ * @param birthDate La [Date] de nacimiento.
+ * @return La edad calculada como [Int].
+ */
 fun calculateAge(birthDate: Date): Int {
     val today = Calendar.getInstance()
     val birthCalendar = Calendar.getInstance().apply { time = birthDate }
@@ -59,7 +64,14 @@ fun calculateAge(birthDate: Date): Int {
     return age
 }
 
-// Función para validar la fecha de nacimiento/perdida
+/**
+ * Valida si una fecha (en milisegundos) es anterior al día actual.
+ * Muestra un [Toast] si la fecha no es válida.
+ *
+ * @param context El [Context] de la aplicación para mostrar el Toast.
+ * @param fecha La fecha a validar, representada como milisegundos desde la época. Puede ser nulo.
+ * @return `true` si la fecha es válida (anterior a hoy y no nula), `false` en caso contrario.
+ */
 fun validarFechaInferiorAHoy(context: Context, fecha: Long?): Boolean {
     if (fecha == null || fecha > System.currentTimeMillis()) {
         Toast.makeText(context, "La fecha debe ser inferior a hoy", Toast.LENGTH_SHORT).show()
@@ -68,7 +80,14 @@ fun validarFechaInferiorAHoy(context: Context, fecha: Long?): Boolean {
     return true
 }
 
-// Función para validar la fecha del evento
+/**
+ * Valida si una fecha de evento (en milisegundos) es igual o posterior al día actual.
+ * Muestra un [Toast] si la fecha no es válida.
+ *
+ * @param context El [Context] de la aplicación para mostrar el Toast.
+ * @param fecha La fecha a validar, representada como milisegundos desde la época. Puede ser nulo.
+ * @return `true` si la fecha es válida (igual o superior a hoy y no nula), `false` en caso contrario.
+ */
 fun validarFechaSuperiorOIgualAHoy(context: Context, fecha: Long?): Boolean {
     if (fecha == null || fecha < System.currentTimeMillis()) {
         Toast.makeText(context, "La fecha debe ser igual o superior a hoy", Toast.LENGTH_SHORT).show()
@@ -77,7 +96,15 @@ fun validarFechaSuperiorOIgualAHoy(context: Context, fecha: Long?): Boolean {
     return true
 }
 
-// Funcion para crear el MapView
+/**
+ * Crea y configura una instancia de [MapView].
+ * Importante: El ciclo de vida de MapView (onCreate, onResume, onPause, etc.) debe ser manejado
+ * por el componente que lo utiliza.
+ *
+ * @param context El [Context] de la aplicación.
+ * @param onMapReady Callback que se invoca cuando el [GoogleMap] está listo para ser usado.
+ * @return Una instancia de [MapView].
+ */
 fun createMapView(
     context: Context,
     onMapReady: (GoogleMap) -> Unit
@@ -88,7 +115,14 @@ fun createMapView(
     }
 }
 
-// Funcion para configurar el mapa
+/**
+ * Configura un [GoogleMap] para mostrar la ubicación actual del usuario y un marcador.
+ * Solicita permisos de ubicación si no están concedidos.
+ *
+ * @param context El [Context] de la aplicación. Debe ser una [Activity] para solicitar permisos.
+ * @param map La instancia de [GoogleMap] a configurar.
+ * @param fusedLocationClient El cliente [com.google.android.gms.location.FusedLocationProviderClient] para obtener la última ubicación conocida.
+ */
 fun setupMap(
     context: Context,
     map: GoogleMap,
@@ -129,7 +163,11 @@ fun setupMap(
     }
 }
 
-// Funcion para validar la clave de la API
+/**
+ * Valida si la clave de la API de Google Maps está configurada en `BuildConfig`.
+ *
+ * @return `true` si la clave de la API es válida y no está vacía, `false` en caso contrario.
+ */
 fun validateApiKey(): Boolean {
     if (BuildConfig.MAPS_API_KEY.isNullOrEmpty()) {
         android.util.Log.e("MapaScreen", "La clave de la API no está configurada.")
@@ -138,14 +176,30 @@ fun validateApiKey(): Boolean {
     return true
 }
 
-// Funcion para verificar la conectividad de red
+/**
+ * Verifica si hay una conexión de red activa disponible en el dispositivo.
+ *
+ * @param context El [Context] de la aplicación.
+ * @return `true` si hay una conexión de red disponible, `false` en caso contrario.
+ */
 fun isNetworkAvailable(context: Context): Boolean {
     val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
     val networkInfo = connectivityManager.activeNetworkInfo
     return networkInfo != null && networkInfo.isConnected
 }
 
-// Funcion para buscar lugares en el mapa de la pantalla de eventos
+
+/**
+ * Busca lugares cercanos en el mapa usando la API de Google Places.
+ *
+ * @param context Contexto de la aplicación.
+ * @param googleMap Instancia del mapa donde se mostrarán los resultados.
+ * @param keyword Palabra clave para buscar (ej. "pipican", "veterinario").
+ *
+ * Valida conexión y clave de API antes de realizar la búsqueda.
+ * Añade marcadores en el mapa con los resultados obtenidos.
+ */
+
 fun searchPlaces(
     context: Context,
     googleMap: GoogleMap?,
@@ -203,7 +257,18 @@ fun searchPlaces(
     }
 }
 
-// Función para enviar correo usando EmailJS
+
+/**
+ * Envía un correo de bienvenida usando el servicio EmailJS.
+ *
+ * @param context Contexto de la aplicación.
+ * @param userName Nombre del usuario a incluir en la plantilla.
+ * @param userEmail Correo del usuario destinatario.
+ *
+ * Utiliza Volley para enviar una solicitud POST a la API de EmailJS con los parámetros definidos.
+ * Registra en Logcat el resultado del envío o cualquier error.
+ */
+
 fun enviarCorreo(context: Context, userName: String, userEmail: String) {
     val url = "https://api.emailjs.com/api/v1.0/email/send"
     val queue = Volley.newRequestQueue(context)
@@ -243,7 +308,18 @@ fun enviarCorreo(context: Context, userName: String, userEmail: String) {
     queue.add(request)
 }
 
-// Funcion para crear un botón de acción en la pantalla de eventos
+
+/**
+ * Crea un botón de acción personalizado con texto e ícono.
+ *
+ * @param text Texto del botón.
+ * @param iconRes Recurso del ícono.
+ * @param bgColor Color de fondo.
+ * @param textStyle Estilo del texto.
+ * @param modifier Modificador de estilo y tamaño.
+ * @param shape Forma del botón.
+ * @param onClick Acción al pulsar el botón.
+ */
 @Composable
 fun ActionButton(
     text: String,
@@ -270,7 +346,13 @@ fun ActionButton(
     }
 }
 
-//Funcion para validar los campos del evento en la pantalla de eventos
+
+/**
+ * Valida los campos obligatorios de un evento.
+ *
+ * @return true si todos los campos son válidos, false si falta alguno.
+ */
+
 fun validarCamposEvento(
     titulo: String,
     descripcion: String,
@@ -287,7 +369,15 @@ fun validarCamposEvento(
     return true
 }
 
-//Funcion para enviar un mensaje al chat de un evento en la pantalla de eventos
+
+/**
+ * Envía un mensaje al chat de un evento en Firestore.
+ *
+ * @param eventoId ID del evento.
+ * @param senderId ID del remitente.
+ * @param texto Contenido del mensaje.
+ */
+
 fun enviarMensaje(eventoId: String, senderId: String, texto: String) {
     val db = FirebaseFirestore.getInstance()
     val mensaje = hashMapOf(
@@ -309,7 +399,14 @@ fun enviarMensaje(eventoId: String, senderId: String, texto: String) {
 }
 
 
-// Funcion para obtener la ciudad a partir de un GeoPoint
+
+/**
+ * Obtiene el nombre de la ciudad a partir de un GeoPoint.
+ *
+ * @param geoPoint Coordenadas geográficas.
+ * @return Nombre de la ciudad o mensaje de error.
+ */
+
 fun getCityFromGeoPoint(context: Context, geoPoint: GeoPoint): String {
     return try {
         val geocoder = Geocoder(context, Locale.getDefault())
@@ -324,7 +421,12 @@ fun getCityFromGeoPoint(context: Context, geoPoint: GeoPoint): String {
     }
 }
 
-// FUNCIONES PARA SUBIR IMÁGENES A FIREBASE STORAGE
+
+/**
+ * Composable para seleccionar y subir una imagen a Firebase Storage.
+ *
+ * @param onUploadComplete Callback con la URL de la imagen subida.
+ */
 @Composable
 fun SelectAndUploadPhoto(
     onUploadComplete: (String) -> Unit
@@ -343,7 +445,13 @@ fun SelectAndUploadPhoto(
     }
 }
 
-// Función para subir la foto a Firebase Storage
+
+/**
+ * Sube una imagen a Firebase Storage y devuelve su URL.
+ *
+ * @param imageUri URI de la imagen seleccionada.
+ * @param onUploadComplete Callback con la URL de descarga.
+ */
 fun uploadPhotoToFirebase(imageUri: Uri, onUploadComplete: (String) -> Unit) {
     val storageRef = FirebaseStorage.getInstance().reference
     val fileName = "images/${UUID.randomUUID()}.jpg"

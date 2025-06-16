@@ -89,8 +89,16 @@ import com.example.doggo2.controller.uploadPhotoToFirebase
 import com.example.doggo2.controller.validarFechaInferiorAHoy
 import com.example.doggo2.controller.validarFechaSuperiorOIgualAHoy
 
-// Diálogo para editar la información del perfil del usuario.
-// Permite modificar el nombre, email y teléfono del usuario.
+
+/**
+ * Diálogo para editar el perfil del usuario.
+ *
+ * Permite modificar nombre, email y teléfono, y guarda los cambios en Firestore.
+ *
+ * @param usuario Objeto Usuario con los datos actuales.
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar los cambios, devuelve el usuario actualizado.
+ */
 @Composable
 fun EditProfileDialog(
     usuario: Usuario,
@@ -149,8 +157,17 @@ fun EditProfileDialog(
     )
 }
 
-// Diálogo para añadir una nueva mascota. Permite ingresar el nombre, raza, edad y URL de la foto
-// de la mascota, y guarda la información en Firestore.
+
+/**
+ * Diálogo para añadir una nueva mascota al perfil del usuario.
+ *
+ * Permite ingresar nombre, raza, fecha de nacimiento y subir una foto.
+ * Valida los campos antes de crear el objeto Mascota y devolverlo mediante onSave.
+ *
+ * @param usuarioId ID del usuario propietario de la mascota.
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar la mascota, devuelve el objeto Mascota creado.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPetDialog(
@@ -276,7 +293,17 @@ fun AddPetDialog(
     )
 }
 
-// Dialogo para editar la información de una mascota existente.
+
+/**
+ * Diálogo para editar la información de una mascota existente.
+ *
+ * Permite modificar el nombre, raza y foto de la mascota. Muestra la fecha de nacimiento y edad.
+ * La imagen puede subirse desde el dispositivo y se actualiza en Firebase Storage.
+ *
+ * @param mascota Objeto Mascota con los datos actuales.
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar los cambios, devuelve la mascota actualizada.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditPetDialog(
@@ -373,7 +400,17 @@ fun EditPetDialog(
     )
 }
 
-// Diálogo para registrar una nueva cuenta. Permite ingresar nombre de usuario, email y contraseña,
+
+/**
+ * Diálogo para registrar una nueva cuenta de usuario.
+ *
+ * Permite ingresar nombre de usuario, correo electrónico y contraseña.
+ * Valida que los campos estén completos, que se acepten las condiciones de uso
+ * y que el nombre de usuario y el email no estén ya registrados en Firestore.
+ *
+ * @param onDismiss Acción al cerrar el diálogo sin registrar.
+ * @param onRegister Acción al confirmar el registro, devuelve nombre, email y contraseña.
+ */
 @Composable
 fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String, String) -> Unit) {
     var username by remember { mutableStateOf("") }
@@ -525,7 +562,17 @@ fun RegisterDialog(onDismiss: () -> Unit, onRegister: (String, String, String) -
     }
 }
 
-//Dialogo para añadir mascota perdida
+
+/**
+ * Diálogo para registrar una mascota perdida.
+ *
+ * Permite ingresar el nombre, fecha de pérdida, ubicación, foto y contacto del dueño.
+ * Valida los campos obligatorios y crea un objeto MascotaPerdida con los datos ingresados.
+ * La ubicación se selecciona mediante un mapa y la imagen se puede subir a Firebase Storage.
+ *
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar la mascota perdida, devuelve el objeto MascotaPerdida creado.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLostPetDialog(
@@ -652,7 +699,16 @@ fun AddLostPetDialog(
     )
 }
 
-//Dialogo para editar mascota perdida
+/**
+ * Diálogo para editar la información de una mascota perdida.
+ *
+ * Permite modificar el nombre, fecha de pérdida, ubicación, foto y contacto del dueño.
+ * La ubicación se selecciona mediante un mapa y la imagen puede subirse a Firebase Storage.
+ *
+ * @param mascota Objeto MascotaPerdida con los datos actuales.
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar los cambios, devuelve la mascota actualizada.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditLostPetDialog(
@@ -772,7 +828,17 @@ fun EditLostPetDialog(
     )
 }
 
-//Dialogo para seleccionar ubicacion en el mapa
+
+/**
+ * Diálogo para seleccionar una ubicación en el mapa.
+ *
+ * Muestra un mapa interactivo donde el usuario puede hacer clic para elegir una ubicación.
+ * La ubicación seleccionada se devuelve como un GeoPoint.
+ *
+ * @param initialLocation Ubicación inicial mostrada en el mapa.
+ * @param onDismiss Acción al cerrar el diálogo sin seleccionar.
+ * @param onLocationSelected Acción al confirmar, devuelve la ubicación seleccionada.
+ */
 @Composable
 fun MapDialog2(
     initialLocation: GeoPoint,
@@ -826,7 +892,17 @@ fun MapDialog2(
     )
 }
 
-//Dialogo para añadir evento
+
+/**
+ * Diálogo para añadir un nuevo evento.
+ *
+ * Permite ingresar título, descripción, tipo, fecha y ubicación del evento.
+ * Valida los campos obligatorios y crea un objeto Evento con los datos ingresados.
+ * La ubicación se selecciona mediante un mapa y la fecha con un selector.
+ *
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar el evento, devuelve el objeto Evento creado.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEventDialog(
@@ -969,7 +1045,18 @@ fun AddEventDialog(
 }
 
 
-// Diálogo para editar un evento existente. Permite modificar el título, descripción, ubicación, fecha y tipo del evento.
+
+/**
+ * Diálogo para editar un evento existente.
+ *
+ * Permite modificar el título, descripción, ubicación, fecha y tipo del evento.
+ * Valida los campos obligatorios y actualiza el objeto Evento con los nuevos datos.
+ * Incluye selección de fecha y ubicación mediante diálogos interactivos.
+ *
+ * @param evento Objeto Evento con los datos actuales.
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar los cambios, devuelve el evento actualizado.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditEventDialog(
@@ -1104,7 +1191,16 @@ fun EditEventDialog(
 }
 
 
-// Diálogo para editar la descripción de un evento. Permite modificar el texto de la descripción.
+
+/**
+ * Diálogo para editar una descripción larga.
+ *
+ * Permite modificar el texto de la descripción de un evento u otro contenido extenso.
+ *
+ * @param initialText Texto inicial a editar.
+ * @param onDismiss Acción al cerrar el diálogo sin guardar.
+ * @param onSave Acción al guardar la nueva descripción.
+ */
 @Composable
 fun LongDescriptionDialog(
     initialText: String,
@@ -1138,7 +1234,15 @@ fun LongDescriptionDialog(
     )
 }
 
-// Diálogo para mostrar la información de un evento. Muestra el título, descripción, ubicación, fecha y tipo del evento.
+/**
+ * Diálogo para mostrar la información detallada de un evento.
+ *
+ * Muestra el título, descripción, ubicación (como ciudad), fecha, tipo y número de participantes.
+ * Permite abrir un mapa para visualizar la ubicación exacta del evento.
+ *
+ * @param evento Objeto Evento con los datos a mostrar.
+ * @param onDismiss Acción al cerrar el diálogo.
+ */
 @Composable
 fun InfoEventDialog(
     evento: Evento,
@@ -1188,7 +1292,14 @@ fun InfoEventDialog(
     }
 }
 
-// Diálogo para mostrar la ubicación de un evento en un mapa. Muestra la latitud y longitud del evento y permite ver su ubicación en un mapa.
+/**
+ * Diálogo para mostrar la ubicación de un evento en un mapa.
+ *
+ * Muestra la latitud y longitud, y un mapa interactivo centrado en la ubicación del evento.
+ *
+ * @param location Coordenadas del evento como GeoPoint.
+ * @param onDismiss Acción al cerrar el diálogo.
+ */
 @Composable
 fun LocationDialog(
     location: GeoPoint,
@@ -1247,8 +1358,15 @@ fun LocationDialog(
     )
 }
 
-//Diálogo para mostrar un mapa con los eventos disponibles.
-// Permite al usuario ver la ubicación de los eventos en un mapa y seleccionar uno para obtener más información.
+/**
+ * Diálogo para mostrar un mapa con los eventos disponibles.
+ *
+ * Muestra todos los eventos en un mapa interactivo con marcadores.
+ * Permite al usuario visualizar la ubicación de cada evento y seleccionar uno para ver su título.
+ *
+ * @param eventos Lista de eventos a mostrar en el mapa.
+ * @param onDismiss Acción al cerrar el diálogo.
+ */
 @Composable
 fun EventMapDialog(
     eventos: List<Evento>,
@@ -1333,9 +1451,16 @@ fun EventMapDialog(
     )
 }
 
-
-//Diálogo para mostrar un chat en tiempo real. Permite a los usuarios enviar y recibir mensajes
-// en un evento específico.
+/**
+ * Diálogo de chat en tiempo real para un evento.
+ *
+ * Permite a los usuarios enviar y recibir mensajes dentro del evento especificado.
+ * Escucha los mensajes en tiempo real desde Firestore y muestra los nombres de los remitentes.
+ *
+ * @param eventoId ID del evento al que pertenece el chat.
+ * @param currentUserId ID del usuario actual que envía mensajes.
+ * @param onDismiss Acción al cerrar el diálogo.
+ */
 @Composable
 fun ChatDialog(
     eventoId: String,
