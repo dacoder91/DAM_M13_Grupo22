@@ -61,6 +61,7 @@ import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.res.painterResource
 import com.example.doggo2.R
 import com.example.doggo2.controller.calculateAge
@@ -1561,4 +1562,75 @@ fun ChatDialog(
             Text(message)
         }
     }
+}
+
+/**
+ * Diálogo para mostrar un mapa con una única ubicación marcada.
+ *
+ * @param location El GeoPoint de la ubicación a mostrar.
+ * @param locationName El nombre que se usará para el marcador en el mapa.
+ * @param onDismiss Callback que se invoca cuando el diálogo se descarta.
+ */
+@Composable
+fun SingleLocationMapDialog(
+    location: GeoPoint,
+    locationName: String,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    // Usamos remember para que el MapView se cree una sola vez
+    val mapView = remember { MapView(context) }
+
+    // Manejo del ciclo de vida del MapView con DisposableEffect
+    DisposableEffect(mapView) {
+        mapView.onCreate(null) // Bundle nulo para la creación inicial
+        mapView.onResume()
+        onDispose {
+            mapView.onPause()
+            mapView.onDestroy()
+            // No es necesario llamar onLowMemory o onSaveInstanceState manualmente aquí
+            // al menos que la documentación del MapView lo indique explícitamente para este uso.
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Ubicación en el Mapa") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp) // Ajusta la altura según necesites
+            ) {
+                AndroidView(
+                    factory = { mapView },
+                    update = { view ->
+                        // Esta lambda se llama cuando el AndroidView se recompone
+                        // pero la vista (mapView) ya existe.
+                        // Puedes usarla para actualizar el mapa si la 'location' o 'locationName' cambian,
+                        // aunque en este caso, como el diálogo se recrea (o la instancia de MapView es la misma
+                        // y el getMapAsync se vuelve a llamar), es probable que no necesites mucha lógica aquí
+                        // si el mapa ya se configura bien en getMapAsync.
+                        // No obstante, llamar a onResume es una buena práctica aquí también si el diálogo
+                        // pudiera pausarse y reanudarse sin destruirse.
+                        view.onResume() // Re-asegura que esté activo
+                        view.getMapAsync { googleMap ->
+                            googleMap.clear() // Limpia marcadores anteriores si el diálogo se reutiliza
+                            val position = LatLng(location.latitude, location.longitude)
+                            googleMap.addMarker(
+                                MarkerOptions().position(position).title(locationName)
+                            )
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 15f)) // Nivel de zoom adecuado
+                            googleMap.uiSettings.isZoomControlsEnabled = true
+                        }
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
 }

@@ -74,7 +74,7 @@ fun MascotasPerdidasScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedMascota by remember { mutableStateOf<MascotaPerdida?>(null) }
     var mostrarEncontradas by remember { mutableStateOf(false) }
-    var showMapDialog by remember { mutableStateOf(false) }
+    var showLocationDialog by remember { mutableStateOf(false) }
     val showHeader by remember { mutableStateOf(true) }
 
     // Escuchar cambios en la colección de mascotas perdidas
@@ -309,7 +309,7 @@ fun MascotasPerdidasScreen(
                                         text = "Ver ubicación",
                                         onClick = {
                                             selectedMascota = mascota
-                                            showMapDialog = true
+                                            showLocationDialog = true // Activa el diálogo de visualización
                                         }
                                     )
                                 }
@@ -361,11 +361,11 @@ fun MascotasPerdidasScreen(
     }
 
     // Diálogo para mostrar la ubicación en el mapa
-    if (showMapDialog && selectedMascota != null) {
-        MapDialog2(
-            initialLocation = selectedMascota!!.ubicacion,
-            onDismiss = { showMapDialog = false },
-            onLocationSelected = { /* No se necesita acción aquí */ }
+    if (showLocationDialog && selectedMascota != null) {
+        SingleLocationMapDialog(
+            location = selectedMascota!!.ubicacion,
+            locationName = selectedMascota!!.nombreMascota,
+            onDismiss = { showLocationDialog = false }
         )
     }
 }
